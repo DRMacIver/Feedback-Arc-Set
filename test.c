@@ -1,23 +1,32 @@
 #include "tournament.h"
-#include "permutations.h"
+#include "fas_tournament.h"
+#include <time.h>
+#include <unistd.h>
 
 int main(){
-  tournament *t = random_tournament(20);
+  srand(time(NULL) ^ getpid());
+
+  tournament *t = random_tournament(8);
 
   print_tourmanent(stdout, t);
 
-  del_tournament(t);
 
 	printf("\n-----------------------\n");
 
-	size_t xs[5] = {0, 1, 2, 3, 4};
+	fas_tournament *ft = run_fas_tournament(t);
 
-	do {
-		for(size_t i = 0; i < 5; i++){
-			printf("%d ", (int)xs[i]);
-		}
-		printf("\n");
-	} while(next_permutation(5, xs) < 5);
+	printf("Score: %f\n", ft->score);
+
+	printf("Results: ");
+
+	for(size_t i = 0; i < ft->results; i++){
+		printf("%d ", (int)ft->optimal_ordering[i]);
+	}
+
+	printf("\n");
+
+  del_tournament(t);
+	del_fas_tournament(ft);
 
   return 0;
 }

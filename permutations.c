@@ -3,6 +3,7 @@
 // Permutations of arrays of size_t
 
 void swap(size_t *x, size_t *y){
+	if(x == y) return;
 	size_t z = *x;
 	*x = *y;
 	*y = z;
@@ -44,3 +45,9 @@ size_t next_permutation(size_t length, size_t *data){
 	return k;
 }
 
+void shuffle(size_t length, size_t *data){
+	for(size_t k = length - 1; k > 0; k--){
+		size_t j = rand() % (k + 1);
+		swap(data + j, data + k);
+	}
+}
