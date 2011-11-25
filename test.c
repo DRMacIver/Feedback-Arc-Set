@@ -5,9 +5,7 @@
 #include <unistd.h>
 
 
-void run_tests(char *name, tournament *t){
-	printf("%s\n", name);
-
+void run_tests(char *label, tournament *t){
 	size_t n = t->size;
 
 	size_t *trial_ordering = malloc(n * sizeof(size_t));
@@ -29,14 +27,9 @@ void run_tests(char *name, tournament *t){
 		total += score;
 	}
 
-	printf("  Best score from %d samples: %f\n", num_trials, best);
 	fas_tournament *ft = run_fas_tournament(t);
 
-	printf("  Optimized Score: %f\n", ft->score);
-	
-	printf("  Improvement over random sampling: %f%%\n", (100 * (ft->score - best) / best));
-
-	printf("\n\n");
+  printf("%s\t%lu\t%f\t%f\t%f\n", label, t->size, best, ft->score, (100 * (ft->score - best) / best));
 
   del_tournament(t);
 	del_fas_tournament(ft);
@@ -45,10 +38,12 @@ void run_tests(char *name, tournament *t){
 int main(){
   srand(time(NULL) ^ getpid());
 
-	size_t n = 1000;
+  for(int i = 3; i <= 12; i++){
+    size_t n = 1 << i;
 
-	run_tests("Purely random", random_tournament(n));
-	run_tests("Random from voting", random_tournament_from_voting(n));
+    run_tests("unstructured", random_tournament(n));
+    run_tests("voting", random_tournament_from_voting(n));
+  }
 
   return 0;
 }
