@@ -4,12 +4,11 @@
 #include <time.h>
 #include <unistd.h>
 
-int main(){
-  srand(time(NULL) ^ getpid());
 
-	size_t n = 100;
+void run_tests(char *name, tournament *t){
+	printf("%s\n", name);
 
-  tournament *t = random_tournament(n);
+	size_t n = t->size;
 
 	size_t *trial_ordering = malloc(n * sizeof(size_t));
 
@@ -30,26 +29,26 @@ int main(){
 		total += score;
 	}
 
-	printf("With %d trials:\n", num_trials);
-	printf("Best score: %f\n", best);
-	printf("Average score: %f\n", total / num_trials);
-
-	printf("\n-----------------------\n");
-
+	printf("  Best score from %d samples: %f\n", num_trials, best);
 	fas_tournament *ft = run_fas_tournament(t);
 
-	printf("Score: %f\n", ft->score);
+	printf("  Optimized Score: %f\n", ft->score);
+	
+	printf("  Improvement over random sampling: %f%%\n", (100 * (ft->score - best) / best));
 
-	printf("Results: ");
-
-	for(size_t i = 0; i < ft->results; i++){
-		printf("%d ", (int)ft->optimal_ordering[i]);
-	}
-
-	printf("\n");
+	printf("\n\n");
 
   del_tournament(t);
 	del_fas_tournament(ft);
+}
+
+int main(){
+  srand(time(NULL) ^ getpid());
+
+	size_t n = 1000;
+
+	run_tests("Purely random", random_tournament(n));
+	run_tests("Random from voting", random_tournament_from_voting(n));
 
   return 0;
 }

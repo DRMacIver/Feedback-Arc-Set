@@ -73,6 +73,12 @@ double brute_force_optimize(tournament *t, size_t n, size_t *items){
 	return best_score;
 }
 
+void window_optimize(tournament *t, size_t n, size_t *items, size_t window){
+	for(size_t i = 0; i < n - window; i++){
+		brute_force_optimize(t, window, items + i); 
+	}
+}
+
 void kwik_sort(tournament *t, size_t count, size_t *items){
 	if(count <= JUST_BRUTE_FORCE_IT){
 		brute_force_optimize(t, count, items);
@@ -140,6 +146,7 @@ fas_tournament *run_fas_tournament(tournament *t){
 	ft->optimal_ordering = results;
 
 	kwik_sort(t, n, results);
+	window_optimize(t, n, results, 5);
 
 	ft->score = score_fas_tournament(t, n, results);
 

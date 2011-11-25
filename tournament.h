@@ -15,5 +15,6 @@ double tournament_get(tournament *t, size_t i, size_t j);
 double tournament_set(tournament *t, size_t i, size_t j, double x);
 void print_tourmanent(FILE *f, tournament *t);
 tournament *random_tournament(size_t n);
+tournament *random_tournament_from_voting(size_t n);
 
 #endif
