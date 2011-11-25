@@ -12,3 +12,5 @@ typedef struct {
 void del_fas_tournament(fas_tournament *t);
 
 fas_tournament *run_fas_tournament(tournament *t);
+
+double score_fas_tournament(tournament *t, size_t count, size_t *data);

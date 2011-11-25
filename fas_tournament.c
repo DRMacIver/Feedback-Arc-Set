@@ -16,8 +16,8 @@ int tournament_compare(tournament *t, size_t i, size_t j){
 	double x = tournament_get(t, i, j);
 	double y = tournament_get(t, j, i);
 
-	if(x <= y - ACCURACY) return -1;
-	if(y <= x - ACCURACY) return +1;
+	if(x >= y - ACCURACY) return -1;
+	if(y >= x - ACCURACY) return +1;
 	return 0;
 }
 
