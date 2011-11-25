@@ -38,12 +38,9 @@ void run_tests(char *label, tournament *t){
 int main(){
   srand(time(NULL) ^ getpid());
 
-  for(int i = 3; i <= 12; i++){
-    size_t n = 1 << i;
-
-    run_tests("unstructured", random_tournament(n));
-    run_tests("voting", random_tournament_from_voting(n));
-  }
+  size_t n = 500;
+  run_tests("unstructured", random_tournament(n));
+  run_tests("voting", random_tournament_from_voting(n));
 
   return 0;
 }
