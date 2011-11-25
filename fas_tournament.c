@@ -5,6 +5,7 @@
 
 #define ACCURACY 0.001
 #define JUST_BRUTE_FORCE_IT 8
+#define MAX_MISSES 5
 
 void del_fas_tournament(fas_tournament *t){
   free(t->optimal_ordering);
@@ -125,9 +126,6 @@ void kwik_sort(tournament *t, size_t count, size_t *items){
 	}
 }
 
-
-
-
 fas_tournament *run_fas_tournament(tournament *t){
 	if(t->size == 0) return NULL;
 
@@ -145,8 +143,23 @@ fas_tournament *run_fas_tournament(tournament *t){
 	}
 	ft->optimal_ordering = results;
 
-	kwik_sort(t, n, results);
-	window_optimize(t, n, results, 5);
+  double best_score = 0.0;
+  
+	size_t *working_buffer = malloc(sizeof(size_t) * n);
+
+  size_t failure_count = 0;
+  while(failure_count < MAX_MISSES){
+    memcpy(working_buffer, results, sizeof(size_t) * n);
+    kwik_sort(t, n, working_buffer);
+    window_optimize(t, n, working_buffer, 6);
+    double score = score_fas_tournament(t, n, working_buffer); 
+
+    if(best_score < score){
+      best_score = score;
+      memcpy(results, working_buffer, sizeof(size_t) * n);
+      failure_count = 0;
+    } else failure_count++;
+  }
 
 	ft->score = score_fas_tournament(t, n, results);
 
