@@ -6,6 +6,7 @@
 #define ACCURACY 0.001
 #define JUST_BRUTE_FORCE_IT 8
 #define MAX_MISSES 5
+#define MIN_IMPROVEMENT 0.005
 
 void del_fas_tournament(fas_tournament *t){
   free(t->optimal_ordering);
@@ -47,15 +48,17 @@ static inline void swap(size_t *x, size_t *y){
 	*y = z;
 }
 
-double brute_force_optimize(tournament *t, size_t n, size_t *items){
-	if(n <= 1) return 0.0;
+int brute_force_optimise(tournament *t, size_t n, size_t *items){
+	if(n <= 1) return 0;
 	if(n == 2){
 		int c = tournament_compare(t, items[0], items[1]);
 		if(c > 0) swap(items, items+1);
-		return tournament_get(t, items[0], items[1]);
+		return c > 0;
 	}
 
-	double best_score = -1.0;
+	double best_score = score_fas_tournament(t, n, items);
+
+  int changed = 0;
 
 	size_t *working_buffer = malloc(sizeof(size_t) * n);
 	memcpy(working_buffer, items, n * sizeof(size_t));
@@ -64,6 +67,7 @@ double brute_force_optimize(tournament *t, size_t n, size_t *items){
 		double score = score_fas_tournament(t, n, working_buffer);
 
 		if(score > best_score){
+      changed = 1;
 			best_score = score;
 			memcpy(items, working_buffer, n * sizeof(size_t));
 		}
@@ -71,18 +75,27 @@ double brute_force_optimize(tournament *t, size_t n, size_t *items){
 
 	free(working_buffer);
 
-	return best_score;
+	return changed;
 }
 
-void window_optimize(tournament *t, size_t n, size_t *items, size_t window){
-	for(size_t i = 0; i < n - window; i++){
-		brute_force_optimize(t, window, items + i); 
-	}
+void window_optimise(tournament *t, size_t n, size_t *items, size_t window){
+  double last_score = score_fas_tournament(t, n, items);
+  for(;;){
+    for(size_t i = 0; i < n - window; i++){
+      brute_force_optimise(t, window, items + i); 
+    }
+    double new_score = score_fas_tournament(t, n, items);
+
+    double improvement = (new_score - last_score) / last_score;
+   
+    if(improvement < MIN_IMPROVEMENT) break;
+    last_score = new_score;
+  }
 }
 
 void kwik_sort(tournament *t, size_t count, size_t *items){
 	if(count <= JUST_BRUTE_FORCE_IT){
-		brute_force_optimize(t, count, items);
+		brute_force_optimise(t, count, items);
 		return;
 	}
 
@@ -151,7 +164,7 @@ fas_tournament *run_fas_tournament(tournament *t){
   while(failure_count < MAX_MISSES){
     memcpy(working_buffer, results, sizeof(size_t) * n);
     kwik_sort(t, n, working_buffer);
-    window_optimize(t, n, working_buffer, 6);
+    window_optimise(t, n, working_buffer, 6);
     double score = score_fas_tournament(t, n, working_buffer); 
 
     if(best_score < score){
