@@ -7,6 +7,8 @@ all: $(OBJ)
 
 clean: 
 	rm -rf $(OBJ)
+	rm fas
+	rm test
 %.o: %.c
 	gcc -c $(C_FLAGS) $< -o $@
 
