@@ -2,7 +2,7 @@
 
 // Permutations of arrays of size_t
 
-void swap(size_t *x, size_t *y){
+static inline void swap(size_t *x, size_t *y){
 	if(x == y) return;
 	size_t z = *x;
 	*x = *y;

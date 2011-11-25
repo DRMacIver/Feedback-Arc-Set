@@ -6,7 +6,7 @@
 int main(){
   srand(time(NULL) ^ getpid());
 
-  tournament *t = random_tournament(8);
+  tournament *t = random_tournament(30);
 
   print_tourmanent(stdout, t);
 
