@@ -1,0 +1,13 @@
+# Feedback Arc Set solver
+
+This is a library + CLI for solving the following problem:
+
+Given a non-negative nxn matrix W, find a permutation p of [0, n) that maximizes
+
+  sum_{p_i < p_j} W_ij
+
+i.e. we regard W_ij as "the weight of evidence that i < j"
+
+This library is currently ropy as hell and you probably shouldn't use it. Just FYI. But it does appear to work and produces relatively decent results based on trivial testing.
+
+You have been warned...
