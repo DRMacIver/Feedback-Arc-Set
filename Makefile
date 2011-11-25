@@ -11,4 +11,4 @@ clean:
 	gcc -c $(C_FLAGS) $< -o $@
 
 test: $(OBJ)
-	gcc -o test $(OBJ)
+	gcc -g -o test tournament.o permutations.o fas_tournament.o test.o
