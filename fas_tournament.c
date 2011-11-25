@@ -5,7 +5,6 @@
 
 #define ACCURACY 0.001
 #define JUST_BRUTE_FORCE_IT 8
-#define PIVOT_BREAK_DOWN 5
 
 void del_fas_tournament(fas_tournament *t){
   free(t->optimal_ordering);
@@ -32,6 +31,11 @@ double score_fas_tournament(tournament *t, size_t count, size_t *data){
 	}
 
 	return score;
+}
+
+// IMPORTANT: Returns an INDEX not an ELEMENT
+size_t pick_a_pivot(tournament *t, size_t count, size_t *items){
+	return rand() % count;
 }
 
 
@@ -75,48 +79,14 @@ void window_optimize(tournament *t, size_t n, size_t *items, size_t window){
 	}
 }
 
-size_t pick_a_pivot(tournament *t, size_t count, size_t *items){
-  if(count <= JUST_BRUTE_FORCE_IT){
-    brute_force_optimize(t, count, items);
-    return items[count / 2];
-  }
-
-  size_t bits = count / PIVOT_BREAK_DOWN;
-
-  size_t *pivots = malloc(sizeof(size_t) * bits);
-
-  for(size_t i = 0; i < bits; i ++){
-    size_t *start = items + PIVOT_BREAK_DOWN * i;
-    size_t len = PIVOT_BREAK_DOWN;
-
-    if(i + len > count) len = count - i;
-
-    brute_force_optimize(t, len, start);
-
-    pivots[i] = start[PIVOT_BREAK_DOWN / 2];
-  }
-
-  size_t result = pick_a_pivot(t, bits, pivots);
-
-  free(pivots);
-
-  return result;
-}
-
 void kwik_sort(tournament *t, size_t count, size_t *items){
 	if(count <= JUST_BRUTE_FORCE_IT){
 		brute_force_optimize(t, count, items);
 		return;
 	}
 
-	size_t v = pick_a_pivot(t, count, items);
-  size_t i = 0;
-
-  for(; i < count; i++){
-    if(items[i] == v) break;
-  }
-
-  assert(items[i] == v);
+	size_t i = pick_a_pivot(t, count, items);
+	size_t v = items[i];
 
 	swap(items + i, items);
 
