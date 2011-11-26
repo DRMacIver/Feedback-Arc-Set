@@ -14,7 +14,7 @@ void run_tests(char *label, tournament *t){
 		trial_ordering[i] = i;
 	}
 
-	int num_trials = 50;
+	int num_trials = 100;
 
 	double best = 0.0;
 	double total = 0.0;
@@ -35,12 +35,26 @@ void run_tests(char *label, tournament *t){
 	del_fas_tournament(ft);
 }
 
-int main(){
+int main(int argc, char **argv){
   srand(time(NULL) ^ getpid());
 
-  size_t n = 500;
-  run_tests("unstructured", random_tournament(n));
-  run_tests("voting", random_tournament_from_voting(n));
+  if(argc > 1){
+    for(int i = 1; i < argc; i++){
+      FILE *f = fopen(argv[i], "r");
+    
+      if(!f){
+        fprintf(stderr, "Unable to open %s for reading\n", argv[i]);
+        exit(1);
+      } else {
+        tournament *t = read_tournament(f);
+        fclose(f);
+        run_tests(argv[i], t);
+      }
+    }
+  } else {
+    tournament *t = read_tournament(stdin);
+    run_tests("stdin", t);
+  }
 
   return 0;
 }
