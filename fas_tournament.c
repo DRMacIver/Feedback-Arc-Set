@@ -182,8 +182,6 @@ fas_tournament *run_fas_tournament(tournament *t){
     memcpy(working_buffer, results, sizeof(size_t) * n);
     kwik_sort(t, n, working_buffer);
     local_sort(t, n, working_buffer);
-    window_optimise(t, n, working_buffer, 6);
-    local_sort(t, n, working_buffer);
     double score = score_fas_tournament(t, n, working_buffer); 
 
     if(best_score < score){
