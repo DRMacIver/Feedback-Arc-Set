@@ -156,6 +156,74 @@ void kwik_sort(tournament *t, size_t count, size_t *items){
 	}
 }
 
+// Note: Takes a value. Returns an index.
+size_t find_best_index(tournament *t, size_t n, size_t *items, size_t candidate){
+  double best_score = 0;
+  size_t best_index = n;
+
+  for(size_t i = 0; i < n; i++){
+    double score_of_index = 0.0;
+    for(size_t j = 0; j < i; j++){
+      score_of_index += tournament_get(t, items[j], candidate); 
+    }
+
+    for(size_t j = i; j < n; j++){
+      score_of_index += tournament_get(t, candidate, items[j]); 
+    }
+
+    if(score_of_index > best_score){
+      best_score = score_of_index;
+      best_index = i;
+    }
+  }
+
+  assert(best_index < n);
+
+  return best_index;
+}
+
+void move_pointer_right(size_t *x, size_t offset){
+  while(offset){
+    size_t *next = x + 1;
+    swap(x, next);
+    x = next;
+    offset--;
+  }
+}
+
+void move_pointer_left(size_t *x, size_t offset){
+  while(offset){
+    size_t *next = x - 1;
+    swap(x, next);
+    x = next;
+    offset--;
+  }
+}
+
+void single_move_optimization(tournament *t, size_t n, size_t *items){
+  int changed = 1;
+
+  while(changed){
+    changed = 0;
+    for(size_t index_of_interest = 0; index_of_interest < n; index_of_interest++){
+      size_t move_index_to = find_best_index(t, n, items, items[index_of_interest]);
+   
+      assert(move_index_to >= 0);
+      assert(move_index_to < n);
+      
+      if(index_of_interest != move_index_to){ 
+        changed = 1;
+      }
+
+      if(index_of_interest > move_index_to){
+        move_pointer_left(items + index_of_interest, (index_of_interest - move_index_to));
+      } else {
+        move_pointer_right(items + index_of_interest, (move_index_to - index_of_interest));
+      }
+    }
+  }
+}
+
 fas_tournament *run_fas_tournament(tournament *t){
 	if(t->size == 0) return NULL;
 
@@ -181,7 +249,7 @@ fas_tournament *run_fas_tournament(tournament *t){
   while(failure_count < MAX_MISSES){
     memcpy(working_buffer, results, sizeof(size_t) * n);
     kwik_sort(t, n, working_buffer);
-    local_sort(t, n, working_buffer);
+    single_move_optimization(t, n, working_buffer);
     double score = score_fas_tournament(t, n, working_buffer); 
 
     if(best_score < score){
