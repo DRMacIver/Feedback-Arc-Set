@@ -108,8 +108,6 @@ int read_line(size_t *buffer_size, char **buffer, FILE *f){
 
   size_t written = 0;
   
-  char *target = *buffer;
- 
   for(;;){
     char c = getc(f);
 
@@ -124,7 +122,7 @@ int read_line(size_t *buffer_size, char **buffer, FILE *f){
       *buffer = realloc(*buffer, *buffer_size);
     }
 
-    target[written++] = c;
+    (*buffer)[written++] = c;
   }
 
   if(written == *buffer_size){
@@ -132,7 +130,7 @@ int read_line(size_t *buffer_size, char **buffer, FILE *f){
     *buffer = realloc(*buffer, *buffer_size);
   }
 
-  target[written] = '\0';
+  (*buffer)[written] = '\0';
 
   return 1;
 }
