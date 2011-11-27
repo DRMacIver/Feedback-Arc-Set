@@ -181,7 +181,22 @@ void single_move_optimization(tournament *t, size_t n, size_t *items){
     for(size_t index_of_interest = 0; index_of_interest < n; index_of_interest++){
       double score_delta = 0;
 
-      for(size_t j = index_of_interest; j < n; j++){
+      if(index_of_interest > 0){
+        size_t j = index_of_interest;
+        do {
+          j--;
+          score_delta += tournament_get(t, items[index_of_interest], items[j]);
+          score_delta -= tournament_get(t, items[j], items[index_of_interest]);
+
+          if(score_delta > 0){
+            move_pointer_left(items+index_of_interest, index_of_interest - j);
+            changed = 1; 
+            break;
+          }
+        } while(j > 0);
+      }
+
+      for(size_t j = index_of_interest + 1; j < n; j++){
         score_delta += tournament_get(t, items[j], items[index_of_interest]);
         score_delta -= tournament_get(t, items[index_of_interest], items[j]);
 
