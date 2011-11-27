@@ -1,0 +1,28 @@
+#!/usr/bin/env ruby
+
+i = -1
+candidate_to_ids = Hash.new{|h, k| h[k] = i += 1 }
+
+values = Hash.new{|h, k| h[k] = Hash.new(0) }
+
+STDIN.each_line do |line|
+  vote = line.strip.split(/, */).map{|x| candidate_to_ids[x] }
+  next if vote.empty?
+  n = vote.length
+  weight = 2.0 / (n * (n - 1))
+
+  (0...n).each do |i|
+    (i+1...n).each do |j|
+      values[vote[i]][vote[j]] += weight
+    end
+  end   
+end
+
+candidates = candidate_to_ids.sort_by{|k, v| v }.map{|x| x.first } 
+
+puts candidates.join(", ")
+puts
+
+(0...candidates.size).each do |i|
+  puts (0...candidates.size).map{|j| values[i][j]}.join(" ")
+end
