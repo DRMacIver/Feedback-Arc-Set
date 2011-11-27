@@ -156,32 +156,6 @@ void kwik_sort(tournament *t, size_t count, size_t *items){
 	}
 }
 
-// Note: Takes a value. Returns an index.
-size_t find_best_index(tournament *t, size_t n, size_t *items, size_t candidate){
-  double best_score = 0;
-  size_t best_index = n;
-
-  for(size_t i = 0; i < n; i++){
-    double score_of_index = 0.0;
-    for(size_t j = 0; j < i; j++){
-      score_of_index += tournament_get(t, items[j], candidate); 
-    }
-
-    for(size_t j = i; j < n; j++){
-      score_of_index += tournament_get(t, candidate, items[j]); 
-    }
-
-    if(score_of_index > best_score){
-      best_score = score_of_index;
-      best_index = i;
-    }
-  }
-
-  assert(best_index < n);
-
-  return best_index;
-}
-
 void move_pointer_right(size_t *x, size_t offset){
   while(offset){
     size_t *next = x + 1;
@@ -202,23 +176,20 @@ void move_pointer_left(size_t *x, size_t offset){
 
 void single_move_optimization(tournament *t, size_t n, size_t *items){
   int changed = 1;
-
   while(changed){
     changed = 0;
     for(size_t index_of_interest = 0; index_of_interest < n; index_of_interest++){
-      size_t move_index_to = find_best_index(t, n, items, items[index_of_interest]);
-   
-      assert(move_index_to >= 0);
-      assert(move_index_to < n);
-      
-      if(index_of_interest != move_index_to){ 
-        changed = 1;
-      }
+      double score_delta = 0;
 
-      if(index_of_interest > move_index_to){
-        move_pointer_left(items + index_of_interest, (index_of_interest - move_index_to));
-      } else {
-        move_pointer_right(items + index_of_interest, (move_index_to - index_of_interest));
+      for(size_t j = index_of_interest; j < n; j++){
+        score_delta += tournament_get(t, items[j], items[index_of_interest]);
+        score_delta -= tournament_get(t, items[index_of_interest], items[j]);
+
+        if(score_delta > 0){
+          move_pointer_right(items+index_of_interest, j - index_of_interest);
+          changed = 1; 
+          break;
+        }
       }
     }
   }
