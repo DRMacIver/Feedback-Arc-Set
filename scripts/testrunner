@@ -34,7 +34,10 @@ TEST_CASES.each do |test|
 
   scores = []
 
-  20.times do 
+  run_count = 20
+
+  start = Time.now
+  run_count.times do 
     ft = fas(test)
     scores << ft[:score]
 
@@ -44,12 +47,15 @@ TEST_CASES.each do |test|
       write_back = true
     end
   end
+  
+  duration = (Time.now - start) / run_count
 
   scores.sort!
 
-  fraction_of_best = scores[scores.length / 2] / best_score
+  median_fraction_of_best = scores[scores.length / 2] / best_score
+  best_fraction_of_best = scores[-1] / best_score
 
-  puts [File.basename(test), scores[0], scores[scores.length / 2], scores[-1], fraction_of_best].join("\t")
+  puts [File.basename(test), duration, scores[0], scores[scores.length / 2], scores[-1], median_fraction_of_best, best_fraction_of_best].join("\t")
   if write_back
     File.open(score_file, "w"){|o| o.puts(JSON.pretty_generate({:score => best_score, :ordering => best_run})) }
   end
