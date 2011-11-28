@@ -54,7 +54,7 @@ TEST_CASES.each do |test|
 
   best_fraction_of_best = scores[-1] / best_score
 
-  puts [File.basename(test), duration, scores[-1], best_fraction_of_best].join("\t")
+  puts [File.basename(test), IO.read(test).split("\n").count, duration, scores[-1], best_fraction_of_best].join("\t")
   if write_back
     File.open(score_file, "w"){|o| o.puts(JSON.pretty_generate({:score => best_score, :ordering => best_run})) }
   end
