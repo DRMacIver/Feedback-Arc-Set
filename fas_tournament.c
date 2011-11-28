@@ -4,6 +4,7 @@
 #include <assert.h>
 
 #define ACCURACY 0.001
+#define SMOOTHING 0.05
 #define JUST_BRUTE_FORCE_IT 8
 #define MAX_MISSES 5
 #define MIN_IMPROVEMENT 0.005
@@ -137,7 +138,7 @@ void kwik_sort(tournament *t, double *scores, size_t count, size_t *items){
 	size_t *gt_begin = items + count;
 
 	while(unsorted_start < gt_begin){	
-		int c = tournament_compare(t, v, *unsorted_start) || double_compare(scores[v], scores[*unsorted_start]);
+		int c = double_compare(scores[v], scores[*unsorted_start]);
 
 		if(c < 0){
 			swap(lt_end, unsorted_start);
@@ -216,15 +217,40 @@ void single_move_optimization(tournament *t, size_t n, size_t *items){
 
 double *initial_scores(tournament *t){
   double *scores = malloc(sizeof(double) * t->size);
+  double *working_buffer = malloc(sizeof(double) * t->size);
 
   for(size_t i = 0; i < t->size; i++){
-    scores[i] = 0;
-
-    for(size_t j = 0; j < t->size; j++){
-      scores[i] += tournament_get(t, j, i);
-    }
+    scores[i] = 1;
   }
 
+  for(int times = 0; times < 20; times++){
+    for(size_t i = 0; i < t->size; i++){
+      working_buffer[i] = 0;
+    }
+
+    for(size_t i = 0; i < t->size; i++){
+      for(size_t j = 0; j < t->size; j++){
+        double ij = tournament_get(t, i, j);
+        double ji = tournament_get(t, j, i);
+
+        // Smoothed probability that i < j
+        double p = (ij + SMOOTHING) / (ij + ji + SMOOTHING * 2);
+
+        working_buffer[j] += scores[i] * p / t -> size;
+        working_buffer[i] += scores[i] * (1 - p) / t -> size;
+      }
+
+    }
+
+    memcpy(scores, working_buffer, sizeof(double) * t->size);
+    double tot = 0.0;
+    for(size_t i = 0; i < t->size; i++){
+      tot += scores[i];
+    }
+      
+  }
+
+  free(working_buffer);
   return scores;
 }
 

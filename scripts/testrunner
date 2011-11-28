@@ -34,7 +34,7 @@ TEST_CASES.each do |test|
 
   scores = []
 
-  run_count = 20
+  run_count = 1
 
   start = Time.now
   run_count.times do 
@@ -52,10 +52,9 @@ TEST_CASES.each do |test|
 
   scores.sort!
 
-  median_fraction_of_best = scores[scores.length / 2] / best_score
   best_fraction_of_best = scores[-1] / best_score
 
-  puts [File.basename(test), duration, scores[0], scores[scores.length / 2], scores[-1], median_fraction_of_best, best_fraction_of_best].join("\t")
+  puts [File.basename(test), duration, scores[-1], best_fraction_of_best].join("\t")
   if write_back
     File.open(score_file, "w"){|o| o.puts(JSON.pretty_generate({:score => best_score, :ordering => best_run})) }
   end
