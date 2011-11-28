@@ -30,8 +30,25 @@ int main(int argc, char **argv){
 
 	printf("Score: %f\n", ft->score);
 	printf("Optimal ordering:");
-	for(size_t i = 0; i < ft->results; i++){
-		printf(" %lu", ft->optimal_ordering[i]);
+
+  size_t i = 0;
+
+  for(;;){
+    size_t next_i = tie_starting_from(t, ft->results, ft->optimal_ordering, i);
+
+    if(next_i > i + 1){
+      printf(" [");
+      for(size_t j = i; j < next_i; j++){
+        if(j > i) printf(" ");
+        printf("%lu", ft->optimal_ordering[j]);
+      }
+      printf("]");
+    } else {
+      printf(" %lu", ft->optimal_ordering[i]);
+    }
+
+    if(next_i == ft->results) break;
+    i = next_i;
 	}
   printf("\n");
 

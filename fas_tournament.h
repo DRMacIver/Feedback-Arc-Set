@@ -14,3 +14,5 @@ void del_fas_tournament(fas_tournament *t);
 fas_tournament *run_fas_tournament(tournament *t);
 
 double score_fas_tournament(tournament *t, size_t count, size_t *data);
+
+size_t tie_starting_from(tournament *t, size_t n, size_t *items, size_t start_index);

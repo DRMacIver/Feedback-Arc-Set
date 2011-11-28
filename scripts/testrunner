@@ -13,7 +13,7 @@ def fas(file)
   score, ordering = results.split("\n");
 
   { :score => score.gsub(/Score: */, "").to_f,
-    :ordering => ordering.gsub(/^.+: */, "").split.map{|x| x.to_i}
+    :ordering => ordering.gsub(/^.+: */, "").gsub(/\[|\]/, "").split.map{|x| x.to_i}
   }
 end
 

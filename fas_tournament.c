@@ -19,8 +19,10 @@ int tournament_compare(tournament *t, size_t i, size_t j){
 	double x = tournament_get(t, i, j);
 	double y = tournament_get(t, j, i);
 
-	if(x >= y - ACCURACY) return -1;
-	if(y >= x - ACCURACY) return +1;
+  if(x < y + ACCURACY && x > y - ACCURACY) return 0;
+
+	if(x >= y) return -1;
+	if(y >= x) return +1;
 	return 0;
 }
 
@@ -292,3 +294,14 @@ fas_tournament *run_fas_tournament(tournament *t){
 	return ft;
 }
 
+size_t tie_starting_from(tournament *t, size_t n, size_t *items, size_t start_index){
+  for(size_t i = start_index+1; i < n; i++){
+    for(size_t j = start_index; j < i; j++){
+      int c = tournament_compare(t, items[i], items[j]);
+
+      if(c) return i;
+    }
+  }
+
+  return n;
+}
