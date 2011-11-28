@@ -11,11 +11,15 @@ int main(int argc, char **argv){
 
   if(argc > 1){
     if(argc > 2){
-      fprintf(stderr, "Usage: fas [inputfile]");
+      fprintf(stderr, "Usage: fas [inputfile]\n");
       exit(1);
     }
 
     argf = fopen(argv[1], "r");
+    if(!argf){
+      fprintf(stderr, "Unable to open file %s for reading\n", argv[1]);
+      exit(1);
+    }
   } else {
     argf = stdin;
   }
