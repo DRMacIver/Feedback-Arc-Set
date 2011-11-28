@@ -177,5 +177,6 @@ tournament *read_tournament(FILE *f){
     i++;
   } while(i < n && read_line(&length, &line, f));
 
+  free(line);
   return t;
 }

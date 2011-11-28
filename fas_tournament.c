@@ -286,6 +286,9 @@ fas_tournament *run_fas_tournament(tournament *t){
 
 	ft->score = score_fas_tournament(t, n, results);
 
+  free(working_buffer);
+  free(scores);
+
 	return ft;
 }
 
