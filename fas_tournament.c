@@ -137,7 +137,7 @@ void kwik_sort(tournament *t, double *scores, size_t count, size_t *items){
 	size_t *gt_begin = items + count;
 
 	while(unsorted_start < gt_begin){	
-		int c = double_compare(scores[v], scores[*unsorted_start]);
+		int c = tournament_compare(t, v, *unsorted_start) || double_compare(scores[v], scores[*unsorted_start]);
 
 		if(c < 0){
 			swap(lt_end, unsorted_start);
