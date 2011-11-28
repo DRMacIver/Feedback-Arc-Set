@@ -1,12 +1,26 @@
 #include <time.h>
 #include <unistd.h>
+#include <stdio.h>
 
 #include "tournament.h"
 #include "fas_tournament.h"
 
-int main(){
+int main(int argc, char **argv){
   srand(time(NULL) ^ getpid());
-	tournament *t = read_tournament(stdin);
+  FILE *argf = NULL;
+
+  if(argc > 1){
+    if(argc > 2){
+      fprintf(stderr, "Usage: fas [inputfile]");
+      exit(1);
+    }
+
+    argf = fopen(argv[1], "r");
+  } else {
+    argf = stdin;
+  }
+
+	tournament *t = read_tournament(argf);
 
 	fas_tournament *ft = run_fas_tournament(t);
 
