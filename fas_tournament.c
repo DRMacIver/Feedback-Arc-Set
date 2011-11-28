@@ -7,7 +7,7 @@
 #define SMOOTHING 0.05
 #define JUST_BRUTE_FORCE_IT 8
 #define MAX_MISSES 5
-#define MIN_IMPROVEMENT 0.005
+#define MIN_IMPROVEMENT 0.00001
 
 void del_fas_tournament(fas_tournament *t){
   free(t->optimal_ordering);
@@ -85,14 +85,16 @@ void window_optimise(tournament *t, size_t n, size_t *items, size_t window){
     return;
   }
   double last_score = score_fas_tournament(t, n, items);
-  for(;;){
+  int changed = 1;
+  while(changed){
+    changed = 0;
     for(size_t i = 0; i < n - window; i++){
-      brute_force_optimise(t, window, items + i); 
+      changed |= brute_force_optimise(t, window, items + i); 
     }
     double new_score = score_fas_tournament(t, n, items);
 
     double improvement = (new_score - last_score) / last_score;
-   
+  
     if(improvement < MIN_IMPROVEMENT) break;
     last_score = new_score;
   }
@@ -277,6 +279,8 @@ fas_tournament *run_fas_tournament(tournament *t){
 
   memcpy(working_buffer, results, sizeof(size_t) * n);
   kwik_sort(t, scores, n, working_buffer);
+  single_move_optimization(t, n, working_buffer);
+  window_optimise(t, n, working_buffer, 5);
   single_move_optimization(t, n, working_buffer);
   memcpy(results, working_buffer, sizeof(size_t) * n);
 
