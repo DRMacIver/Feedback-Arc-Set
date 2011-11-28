@@ -37,7 +37,7 @@ double score_fas_tournament(tournament *t, size_t count, size_t *data){
 
 // IMPORTANT: Returns an INDEX not an ELEMENT
 size_t pick_a_pivot(tournament *t, size_t count, size_t *items){
-	return rand() % count;
+	return count / 2;
 }
 
 
@@ -110,7 +110,11 @@ int local_sort(tournament *t, size_t n, size_t *items){
   return changed;
 }
 
-void kwik_sort(tournament *t, size_t count, size_t *items){
+int double_compare(double x, double y){
+  return (x > y) - (y < x);
+}
+
+void kwik_sort(tournament *t, double *scores, size_t count, size_t *items){
 	if(count <= JUST_BRUTE_FORCE_IT){
 		brute_force_optimise(t, count, items);
 		return;
@@ -133,7 +137,7 @@ void kwik_sort(tournament *t, size_t count, size_t *items){
 	size_t *gt_begin = items + count;
 
 	while(unsorted_start < gt_begin){	
-		int c = tournament_compare(t, *unsorted_start, v);
+		int c = double_compare(scores[v], scores[*unsorted_start]);
 
 		if(c < 0){
 			swap(lt_end, unsorted_start);
@@ -148,11 +152,11 @@ void kwik_sort(tournament *t, size_t count, size_t *items){
 		}	
 	}
 
-	kwik_sort(t, (lt_end - items), items);
-	kwik_sort(t, (items + count - gt_begin), gt_begin);
+	kwik_sort(t, scores, (lt_end - items), items);
+	kwik_sort(t, scores, (items + count - gt_begin), gt_begin);
 
 	if((gt_begin - lt_end) < count){
-		kwik_sort(t, (gt_begin - lt_end), lt_end);
+		kwik_sort(t, scores, (gt_begin - lt_end), lt_end);
 	}
 }
 
@@ -210,8 +214,24 @@ void single_move_optimization(tournament *t, size_t n, size_t *items){
   }
 }
 
+double *initial_scores(tournament *t){
+  double *scores = malloc(sizeof(double) * t->size);
+
+  for(size_t i = 0; i < t->size; i++){
+    scores[i] = 0;
+
+    for(size_t j = 0; j < t->size; j++){
+      scores[i] += tournament_get(t, j, i);
+    }
+  }
+
+  return scores;
+}
+
 fas_tournament *run_fas_tournament(tournament *t){
 	if(t->size == 0) return NULL;
+
+  double *scores = initial_scores(t);
 
 	fas_tournament *ft = malloc(sizeof(fas_tournament));
 
@@ -227,23 +247,12 @@ fas_tournament *run_fas_tournament(tournament *t){
 	}
 	ft->optimal_ordering = results;
 
-  double best_score = 0.0;
-  
 	size_t *working_buffer = malloc(sizeof(size_t) * n);
 
-  size_t failure_count = 0;
-  while(failure_count < MAX_MISSES){
-    memcpy(working_buffer, results, sizeof(size_t) * n);
-    kwik_sort(t, n, working_buffer);
-    single_move_optimization(t, n, working_buffer);
-    double score = score_fas_tournament(t, n, working_buffer); 
-
-    if(best_score < score){
-      best_score = score;
-      memcpy(results, working_buffer, sizeof(size_t) * n);
-      failure_count = 0;
-    } else failure_count++;
-  }
+  memcpy(working_buffer, results, sizeof(size_t) * n);
+  kwik_sort(t, scores, n, working_buffer);
+  single_move_optimization(t, n, working_buffer);
+  memcpy(results, working_buffer, sizeof(size_t) * n);
 
 	ft->score = score_fas_tournament(t, n, results);
 
