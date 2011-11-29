@@ -330,7 +330,6 @@ fas_tournament *run_fas_tournament(tournament *t){
 	size_t *working_buffer = malloc(sizeof(size_t) * n);
 	memcpy(working_buffer, results, n * sizeof(size_t));
 
-  memcpy(working_buffer, results, sizeof(size_t) * n);
   kwik_sort(t, scores, n, working_buffer);
   single_move_optimization(t, n, working_buffer);
   window_optimise(t, n, working_buffer, 5);
