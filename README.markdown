@@ -12,7 +12,7 @@ I would only give a fairly qualified recommendation in favour of it.
 
 Features:
 
-* It does a pretty good job. The results are within 1% of the best known ordering I have for any of my test data
+* It does a pretty good job. The results are within 2% of the best known ordering I have for any of my test data (the goal is within 1% - not currently achieved for some data)
 * It's quite fast. For small numbers of items (<= 100) it completes in a few 100ms. 
 * It's deterministic. There are theoretically better randomized algorithms for this but I wanted it to produce reproducable results.
 * It respects condorcet partitions. That is, if you partition the candidates into two sets A and B such that W_ab > W_ba for any a in A and b in B, it will always put everything in A first
