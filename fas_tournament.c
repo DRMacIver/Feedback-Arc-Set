@@ -119,7 +119,7 @@ int local_sort(tournament *t, size_t n, size_t *items){
 }
 
 int double_compare(double x, double y){
-  return (x > y) - (y < x);
+  return (x > y) - (y > x);
 }
 
 void kwik_sort(tournament *t, double *scores, size_t count, size_t *items){
