@@ -123,6 +123,10 @@ int double_compare(double x, double y){
 }
 
 void kwik_sort(tournament *t, double *scores, size_t count, size_t *items){
+  size_t *save_buffer = malloc(n * sizeof(size_t));
+  memcpy(save_buffer, items, n * sizeof(size_t));
+  double starting_score = score_fas_tournament(t, count, items);
+
 	if(count <= JUST_BRUTE_FORCE_IT){
 		brute_force_optimise(t, count, items);
 		return;
@@ -166,6 +170,13 @@ void kwik_sort(tournament *t, double *scores, size_t count, size_t *items){
 	if((gt_begin - lt_end) < count){
 		kwik_sort(t, scores, (gt_begin - lt_end), lt_end);
 	}
+
+  if(score_fas_tournament(t, count, items) < starting_score){
+    // That didn't go so well
+    memcpy(items, save_buffer, n * sizeof(size_t));
+  }
+
+  free(save_buffer);
 }
 
 void move_pointer_right(size_t *x, size_t offset){
