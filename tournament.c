@@ -143,6 +143,7 @@ void fail(char *msg){
 tournament *read_tournament(FILE *f){
   size_t length = 1024;
   char *line = NULL;
+  tournament *t;
 
   if(!read_line(&length, &line, f)){
     fail("No data for read_tournament");
@@ -152,30 +153,63 @@ tournament *read_tournament(FILE *f){
 
   if(n == 0) fail("Empty line in read_tournament)");
 
-  tournament *t = new_tournament(n);
+  if(n == 1){
+    // We interpret this as sparse matrix format
 
-  size_t i = 0;
-  do {
-    size_t j = 0;
-    
-    char *start = line;
     char *rest = line;
 
-    while(*start){
-      if(j >= n) fail("Too many entries");
+    n = strtoul(line, &rest, 0);
 
-      double f = strtod(start, &rest);
-
-      if(rest == start) fail("Failed to read line");
-
-      tournament_set(t, i, j, f);
-
-      j++;
-      start = rest;
+    if(line == rest){
+      fail("I didn't understand the starting line");
+    } else if (n <= 0){
+      fail("Empty tournament");
     }
-     
-    i++;
-  } while(i < n && read_line(&length, &line, f));
+
+    t = new_tournament(n);
+
+    while(read_line(&length, &line, f)){
+      char *check = line;
+      size_t i = strtoul(line, &rest, 0);
+      if(rest == check) fail("failed to parse line"); 
+      check = rest;
+      size_t j = strtoul(rest, &rest, 0);
+      if(rest == check) fail("failed to parse line"); 
+      check = rest;
+      double f = strtod(rest, &rest);
+      if(rest == check) fail("failed to parse line"); 
+
+      if(i >= n || j >= n) fail("index out of bounds");
+    
+      tournament_add(t, i, j, f);
+    }
+
+  } else {
+    t = new_tournament(n);
+
+    size_t i = 0;
+    do {
+      size_t j = 0;
+      
+      char *start = line;
+      char *rest = line;
+
+      while(*start){
+        if(j >= n) fail("Too many entries");
+
+        double f = strtod(start, &rest);
+
+        if(rest == start) fail("Failed to read line");
+
+        tournament_set(t, i, j, f);
+
+        j++;
+        start = rest;
+      }
+       
+      i++;
+    } while(i < n && read_line(&length, &line, f));
+  }
 
   free(line);
   return t;
