@@ -38,6 +38,14 @@ double score_fas_tournament(tournament *t, size_t count, size_t *data){
 	return score;
 }
 
+size_t *integer_range(size_t n){
+	size_t *results = malloc(sizeof(size_t) * n);
+	for(size_t i = 0; i < n; i++){
+		results[i] = i;
+	}
+  return results;
+}
+
 // IMPORTANT: Returns an INDEX not an ELEMENT
 size_t pick_a_pivot(tournament *t, size_t count, size_t *items){
 	return count / 2;
@@ -288,8 +296,7 @@ void shuffle_optimisation(tournament *t, size_t n, size_t *items){
       failure_count++;
       if(failure_count > 50) break;
     }
-  }
-
+  } 
   free(working_buffer);
 }
 
@@ -308,11 +315,60 @@ void optimise_pretty_thoroughly(tournament *t, size_t n, size_t *items){
   }
 }
 
+void smoothing_optimisation_pass(tournament *t, size_t n, size_t *items){
+  single_move_optimization(t, n, items);
+  window_optimise(t, n, items, 5);
+  single_move_optimization(t, n, items);
+}
+
+void simple_optimisation_pass(tournament *t, size_t n, size_t *items){
+  if(n <= JUST_BRUTE_FORCE_IT){
+    brute_force_optimise(t, n, items);
+  } else {
+    double *scores = initial_scores(t);
+    kwik_sort(t, scores, n, items);
+    smoothing_optimisation_pass(t, n, items);
+    free(scores);
+  }
+}
+
+#define CHUNK_SIZE 4
+void optimise_normally(tournament *t, size_t n, size_t *items){
+  if(n <= JUST_BRUTE_FORCE_IT){
+    brute_force_optimise(t, n, items);
+  } else {
+    simple_optimisation_pass(t, n, items);
+    window_optimise(t, n, items, CHUNK_SIZE);
+
+    size_t *chunk_indices = integer_range(n / CHUNK_SIZE);
+    tournament *chunk_tournament = new_tournament(n / CHUNK_SIZE + 1);
+
+    for(size_t i = 0; i < n; i++){
+      for(size_t j = 0; j < n; j++){
+        tournament_add(chunk_tournament, i / CHUNK_SIZE, j / CHUNK_SIZE, tournament_get(t, items[i],  items[j]));
+      }
+    }
+
+    optimise_normally(chunk_tournament, n / CHUNK_SIZE, chunk_indices);
+
+    size_t *working_buffer = malloc(n * sizeof(size_t));
+
+    for(size_t i = 0; i < n; i++){
+      size_t j = chunk_indices[i / CHUNK_SIZE] + (i % CHUNK_SIZE);
+      fprintf(stderr, "%lu -> %lu\n", j, i);
+      working_buffer[i] = items[j];
+    }
+
+    memcpy(items, working_buffer, n * sizeof(size_t));
+
+    free(working_buffer);
+    free(chunk_indices);
+    del_tournament(chunk_tournament);
+  }
+}
 
 fas_tournament *run_fas_tournament(tournament *t){
 	if(t->size == 0) return NULL;
-
-  double *scores = initial_scores(t);
 
 	fas_tournament *ft = malloc(sizeof(fas_tournament));
 
@@ -322,25 +378,13 @@ fas_tournament *run_fas_tournament(tournament *t){
 	size_t n = t->size;
 
 	ft->results = n;
-	size_t *results = malloc(sizeof(size_t) * n);
-	for(size_t i = 0; i < n; i++){
-		results[i] = i;
-	}
 
-	size_t *working_buffer = malloc(sizeof(size_t) * n);
-	memcpy(working_buffer, results, n * sizeof(size_t));
+  size_t *results = integer_range(n);
 
-  kwik_sort(t, scores, n, working_buffer);
-  single_move_optimization(t, n, working_buffer);
-  window_optimise(t, n, working_buffer, 5);
-  single_move_optimization(t, n, working_buffer);
-  memcpy(results, working_buffer, sizeof(size_t) * n);
+  optimise_normally(t, n, results);
 
 	ft->optimal_ordering = results;
   ft->score = score_fas_tournament(t, n, results);
-
-  free(working_buffer);
-  free(scores);
 
 	return ft;
 }
