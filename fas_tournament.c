@@ -130,17 +130,17 @@ int double_compare(double x, double y){
   return (x > y) - (y > x);
 }
 
-void kwik_sort(tournament *t, double *scores, size_t count, size_t *items){
+void kwik_sort(tournament *t, double *scores, size_t n, size_t *items){
   size_t *save_buffer = malloc(n * sizeof(size_t));
   memcpy(save_buffer, items, n * sizeof(size_t));
-  double starting_score = score_fas_tournament(t, count, items);
+  double starting_score = score_fas_tournament(t, n, items);
 
-	if(count <= JUST_BRUTE_FORCE_IT){
-		brute_force_optimise(t, count, items);
+	if(n <= JUST_BRUTE_FORCE_IT){
+		brute_force_optimise(t, n, items);
 		return;
 	}
 
-	size_t i = pick_a_pivot(t, count, items);
+	size_t i = pick_a_pivot(t, n, items);
 	size_t v = items[i];
 
 	swap(items + i, items);
@@ -154,7 +154,7 @@ void kwik_sort(tournament *t, double *scores, size_t count, size_t *items){
 	size_t *lt_end = items;
 	
 	// WARNING: Past end of array
-	size_t *gt_begin = items + count;
+	size_t *gt_begin = items + n;
 
 	while(unsorted_start < gt_begin){	
 		int c = double_compare(scores[v], scores[*unsorted_start]);
@@ -173,13 +173,13 @@ void kwik_sort(tournament *t, double *scores, size_t count, size_t *items){
 	}
 
 	kwik_sort(t, scores, (lt_end - items), items);
-	kwik_sort(t, scores, (items + count - gt_begin), gt_begin);
+	kwik_sort(t, scores, (items + n - gt_begin), gt_begin);
 
-	if((gt_begin - lt_end) < count){
+	if((gt_begin - lt_end) < n){
 		kwik_sort(t, scores, (gt_begin - lt_end), lt_end);
 	}
 
-  if(score_fas_tournament(t, count, items) < starting_score){
+  if(score_fas_tournament(t, n, items) < starting_score){
     // That didn't go so well
     memcpy(items, save_buffer, n * sizeof(size_t));
   }
