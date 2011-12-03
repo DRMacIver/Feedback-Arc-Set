@@ -16,18 +16,24 @@ void del_tournament(tournament *t){
   free(t);
 }
 
+
+#define CHECK_INDICES assert(i >= 0); assert(i < n); assert(j >= 0); assert(j < n);
+
 inline double tournament_get(tournament *t, size_t i, size_t j){
   size_t n = t->size;
+  CHECK_INDICES
   return t->entries[n * i + j];
 }
 
 double tournament_set(tournament *t, size_t i, size_t j, double x){
   size_t n = t->size;
+  CHECK_INDICES
   return (t->entries[n * i + j] = x);
 }
 
 double tournament_add(tournament *t, size_t i, size_t j, double x){
   size_t n = t->size;
+  CHECK_INDICES
   return (t->entries[n * i + j] += x);
 }
 
