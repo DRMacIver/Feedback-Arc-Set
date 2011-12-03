@@ -131,14 +131,13 @@ int double_compare(double x, double y){
 }
 
 void kwik_sort(tournament *t, double *scores, size_t n, size_t *items){
-  size_t *save_buffer = malloc(n * sizeof(size_t));
-  memcpy(save_buffer, items, n * sizeof(size_t));
-  double starting_score = score_fas_tournament(t, n, items);
-
 	if(n <= JUST_BRUTE_FORCE_IT){
 		brute_force_optimise(t, n, items);
 		return;
 	}
+  size_t *save_buffer = malloc(n * sizeof(size_t));
+  memcpy(save_buffer, items, n * sizeof(size_t));
+  double starting_score = score_fas_tournament(t, n, items);
 
 	size_t i = pick_a_pivot(t, n, items);
 	size_t v = items[i];
@@ -299,7 +298,6 @@ void shuffle_optimisation(tournament *t, size_t n, size_t *items){
     double score = score_fas_tournament(t, n, working_buffer);
 
     if(score > best_score){
-      fprintf(stderr, "Score: %f -> %f\n", best_score, score);
       failure_count = 0;
       memcpy(items, working_buffer, sizeof(size_t) * n);
       best_score = score;
@@ -351,8 +349,9 @@ void optimise_normally(tournament *t, size_t n, size_t *items){
     simple_optimisation_pass(t, n, items);
     window_optimise(t, n, items, CHUNK_SIZE);
 
-    size_t *chunk_indices = integer_range(n / CHUNK_SIZE);
-    tournament *chunk_tournament = new_tournament(n / CHUNK_SIZE + 1);
+    size_t num_chunks = n / CHUNK_SIZE + 1;
+    size_t *chunk_indices = integer_range(num_chunks);
+    tournament *chunk_tournament = new_tournament(num_chunks);
 
     for(size_t i = 0; i < n; i++){
       for(size_t j = 0; j < n; j++){
@@ -360,14 +359,16 @@ void optimise_normally(tournament *t, size_t n, size_t *items){
       }
     }
 
-    optimise_normally(chunk_tournament, n / CHUNK_SIZE, chunk_indices);
+    optimise_normally(chunk_tournament, num_chunks, chunk_indices);
 
     size_t *working_buffer = malloc(n * sizeof(size_t));
 
-    for(size_t i = 0; i < n; i++){
-      size_t j = chunk_indices[i / CHUNK_SIZE] + (i % CHUNK_SIZE);
-      fprintf(stderr, "%lu -> %lu\n", j, i);
-      working_buffer[i] = items[j];
+    for(size_t i = 0; i < num_chunks; i++){
+      size_t chunk_length = (i < num_chunks - 1) ? CHUNK_SIZE : (n - i * CHUNK_SIZE);
+
+      for(size_t j = 0; j < chunk_length; j++){
+        working_buffer[chunk_indices[i] * CHUNK_SIZE + j] = items[i * CHUNK_SIZE + j];
+      }
     }
 
     memcpy(items, working_buffer, n * sizeof(size_t));
