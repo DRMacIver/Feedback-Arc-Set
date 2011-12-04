@@ -51,7 +51,7 @@ int main(int argc, char **argv){
     if(next_i == ft->results) break;
 
     i = next_i;
-    if(i >= next_boundary){
+    if(i > next_boundary){
       printf(" ||");
       next_boundary = condorcet_boundary_from(t, ft->results, ft->optimal_ordering, i);
     }
