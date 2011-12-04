@@ -269,6 +269,14 @@ void optimise_pretty_thoroughly(tournament *t, size_t n, size_t *items){
   }
 }
 
+#define CHUNK_SIZE 8
+void optimise_subranges_thoroughly(tournament *t, size_t n, size_t *items){
+  for(size_t i = 0; i < n; i += CHUNK_SIZE){
+    size_t length = CHUNK_SIZE;
+    if(i + length > n) length = n - i;
+    brute_force_optimise(t, length, items + i);
+  }
+}
 
 fas_tournament *run_fas_tournament(tournament *t){
 	if(t->size == 0) return NULL;
@@ -289,10 +297,8 @@ fas_tournament *run_fas_tournament(tournament *t){
 	}
 
   sort_by_score(n, scores, results);
-  single_move_optimization(t, n, results);
-  window_optimise(t, n, results, 5);
-  single_move_optimization(t, n, results);
-
+  optimise_subranges_thoroughly(t, n, results);
+  while(window_optimise(t, n, results, 5) || single_move_optimization(t, n, results));
 
 	ft->optimal_ordering = results;
   ft->score = score_fas_tournament(t, n, results);
