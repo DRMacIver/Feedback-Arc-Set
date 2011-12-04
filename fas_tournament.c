@@ -133,6 +133,27 @@ void sort_by_score(size_t n, double *scores, size_t *values){
   }
 }
 
+void multisort_by_score(tournament *t, double *scores, size_t n, size_t *items){
+  sort_by_score(n, scores, items);
+
+  if(n <= JUST_BRUTE_FORCE_IT) brute_force_optimise(t, n, items);
+  else {
+    size_t k = n/2;
+    size_t pivot = items[k];
+
+    double *new_scores = malloc(sizeof(double) * t->size);
+
+    for(size_t i = 0; i < t->size; i++){
+      new_scores[i] = tournament_get(t, pivot, i);
+    }
+
+    sort_by_score(n, new_scores, items);
+
+    multisort_by_score(t, scores, k, items);
+    multisort_by_score(t, scores, n - k, items + k);
+  }
+}
+
 void move_pointer_right(size_t *x, size_t offset){
   while(offset){
     size_t *next = x + 1;
@@ -296,7 +317,7 @@ fas_tournament *run_fas_tournament(tournament *t){
 		results[i] = i;
 	}
 
-  sort_by_score(n, scores, results);
+  multisort_by_score(t, scores, n, results);
   optimise_subranges_thoroughly(t, n, results);
   while(window_optimise(t, n, results, 5) || single_move_optimization(t, n, results));
 
