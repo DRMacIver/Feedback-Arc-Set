@@ -3,6 +3,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
+#include <assert.h>
 
 tournament *new_tournament(int n){
   size_t size = sizeof(tournament) + sizeof(double) * n * n;
