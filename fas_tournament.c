@@ -299,6 +299,51 @@ void optimise_subranges_thoroughly(tournament *t, size_t n, size_t *items){
   }
 }
 
+void rotate_array(size_t n, size_t *items, size_t k){
+  if(!k) return;
+
+  k = k % n;
+  for(size_t i = 0; i < k; i++){
+    size_t new_start = items[n - 1];
+    for(size_t j = n - 1; j > 0; j--){
+      items[j] = items[j-1];
+    }
+    items[0] = new_start;
+  }
+}
+
+size_t find_best_cycle(tournament *t, size_t n, size_t *items){
+  double best_score = score_fas_tournament(t, n, items);
+  size_t best_index = 0;
+
+  for(size_t k = 1; k < n; k++){
+    rotate_array(n, items, 1);
+    double score =  score_fas_tournament(t, n, items);
+
+    if(score > best_score){
+      best_score = score;
+      best_index = k;
+    }
+  }
+  rotate_array(n, items, 1);
+  if(!best_index) return 0;
+
+  rotate_array(n, items, best_index);
+
+  return best_index;
+}
+
+int cycle_all_subranges(tournament *t, size_t n, size_t *items, size_t max_length){
+  int changed = 0;
+
+  for(size_t length = 2; length < max_length; length++){
+    for(size_t start = 0; start + length < n; start++){
+      changed |= find_best_cycle(t, length, items+start);
+    }
+  }
+  return changed;
+}
+
 fas_tournament *run_fas_tournament(tournament *t){
 	if(t->size == 0) return NULL;
 
@@ -320,6 +365,7 @@ fas_tournament *run_fas_tournament(tournament *t){
   multisort_by_score(t, scores, n, results);
   optimise_subranges_thoroughly(t, n, results);
   while(window_optimise(t, n, results, 5) || single_move_optimization(t, n, results));
+  cycle_all_subranges(t, n, results, 25);
 
 	ft->optimal_ordering = results;
   ft->score = score_fas_tournament(t, n, results);
