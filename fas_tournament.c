@@ -122,61 +122,15 @@ int double_compare(double x, double y){
   return (x > y) - (y > x);
 }
 
-void kwik_sort(tournament *t, double *scores, size_t n, size_t *items){
-  size_t *save_buffer = malloc(n * sizeof(size_t));
-  memcpy(save_buffer, items, n * sizeof(size_t));
-  double starting_score = score_fas_tournament(t, n, items);
-
-	if(n <= JUST_BRUTE_FORCE_IT){
-		brute_force_optimise(t, n, items);
-		return;
-	}
-
-	size_t i = pick_a_pivot(t, n, items);
-	size_t v = items[i];
-
-	swap(items + i, items);
-
-	// Simple three-way partition
-	// While sorting we have:
-	// [< v | ==v | ??? | > v ]
-
-	size_t *unsorted_start = items + 1;
-
-	size_t *lt_end = items;
-	
-	// WARNING: Past end of array
-	size_t *gt_begin = items + n;
-
-	while(unsorted_start < gt_begin){	
-		int c = double_compare(scores[v], scores[*unsorted_start]);
-
-		if(c < 0){
-			swap(lt_end, unsorted_start);
-			lt_end++;	
-			unsorted_start++;
-		}
-		else if (c == 0){
-			unsorted_start++;
-		} else {
-			gt_begin--;
-			swap(unsorted_start, gt_begin);
-		}	
-	}
-
-	kwik_sort(t, scores, (lt_end - items), items);
-	kwik_sort(t, scores, (items + n - gt_begin), gt_begin);
-
-	if((gt_begin - lt_end) < n){
-		kwik_sort(t, scores, (gt_begin - lt_end), lt_end);
-	}
-
-  if(score_fas_tournament(t, n, items) < starting_score){
-    // That didn't go so well
-    memcpy(items, save_buffer, n * sizeof(size_t));
+// Insertion sort for now. Everything else is O(n^2) anyway
+void sort_by_score(size_t n, double *scores, size_t *values){
+  for(size_t i = 1; i < n; i++){
+    size_t k = i;
+    while(k > 0 && scores[values[k]] < scores[values[k - 1]]){
+      swap(values + k, values + k - 1);
+      k--;
+    }
   }
-
-  free(save_buffer);
 }
 
 void move_pointer_right(size_t *x, size_t offset){
@@ -236,6 +190,7 @@ int single_move_optimization(tournament *t, size_t n, size_t *items){
   return changed_at_all;
 }
 
+#define SCORE_SMOOTHING 0.1
 double *initial_scores(tournament *t){
   double *scores = malloc(sizeof(double) * t->size);
   double *working_buffer = malloc(sizeof(double) * t->size);
@@ -250,17 +205,14 @@ double *initial_scores(tournament *t){
     }
 
     for(size_t i = 0; i < t->size; i++){
+      double total_score = t->size * SCORE_SMOOTHING;
       for(size_t j = 0; j < t->size; j++){
-        double ij = tournament_get(t, i, j);
-        double ji = tournament_get(t, j, i);
-
-        // Smoothed probability that i < j
-        double p = (ij + SMOOTHING) / (ij + ji + SMOOTHING * 2);
-
-        working_buffer[j] += scores[i] * p / t -> size;
-        working_buffer[i] += scores[i] * (1 - p) / t -> size;
+        total_score += tournament_get(t, i, j);
       }
 
+      for(size_t j = 0; j < t->size; j++){
+        working_buffer[j] += scores[i] * (SCORE_SMOOTHING + tournament_get(t, i, j)) / total_score;
+      }
     }
 
     memcpy(scores, working_buffer, sizeof(double) * t->size);
@@ -268,7 +220,6 @@ double *initial_scores(tournament *t){
     for(size_t i = 0; i < t->size; i++){
       tot += scores[i];
     }
-      
   }
 
   free(working_buffer);
@@ -291,7 +242,6 @@ void shuffle_optimisation(tournament *t, size_t n, size_t *items){
     double score = score_fas_tournament(t, n, working_buffer);
 
     if(score > best_score){
-      fprintf(stderr, "Score: %f -> %f\n", best_score, score);
       failure_count = 0;
       memcpy(items, working_buffer, sizeof(size_t) * n);
       best_score = score;
@@ -338,19 +288,15 @@ fas_tournament *run_fas_tournament(tournament *t){
 		results[i] = i;
 	}
 
-	size_t *working_buffer = malloc(sizeof(size_t) * n);
-	memcpy(working_buffer, results, n * sizeof(size_t));
+  sort_by_score(n, scores, results);
+  single_move_optimization(t, n, results);
+  window_optimise(t, n, results, 5);
+  single_move_optimization(t, n, results);
 
-  kwik_sort(t, scores, n, working_buffer);
-  single_move_optimization(t, n, working_buffer);
-  window_optimise(t, n, working_buffer, 5);
-  single_move_optimization(t, n, working_buffer);
-  memcpy(results, working_buffer, sizeof(size_t) * n);
 
 	ft->optimal_ordering = results;
   ft->score = score_fas_tournament(t, n, results);
 
-  free(working_buffer);
   free(scores);
 
 	return ft;
