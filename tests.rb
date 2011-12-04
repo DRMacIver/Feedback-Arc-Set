@@ -3,6 +3,14 @@
 require "rubygems"
 require "json"
 require "smart_colored"
+require "trollop"
+
+require 'trollop'
+
+OPTS = Trollop::options do
+  opt :"valgrind", "Run tests with valgrind", :default => false
+end
+
 
 BASE = File.dirname(__FILE__)
 FAS = File.join(BASE, "fas")
@@ -14,7 +22,13 @@ SUCCESS = "SUCCESS".colored.green
 
 def fas(file)
   t = Time.now
-  results = %x{valgrind --error-exitcode=42 --log-file=#{file.gsub(/.data$/, "")}.valgrind.log #{FAS} < #{file}}
+	results = nil
+
+	if OPTS[:"valgrind"]
+		results = %x{valgrind --error-exitcode=42 --log-file=#{file.gsub(/.data$/, "")}.valgrind.log #{FAS} < #{file}}
+	else
+		results = %x{#{FAS} < #{file}}
+	end
   valgrind_failed = $?.exitstatus != 0
   runtime = Time.now - t
   score, ordering = results.split("\n");
@@ -64,7 +78,7 @@ TEST_CASES.each do |test|
   failed ||= runtime_failed
 
   puts File.basename(test).gsub(/.data$/, "")
-  puts "  Valgrind:      #{valgrind_failed ? FAILURE : SUCCESS}"
+  puts "  Valgrind:      #{valgrind_failed ? FAILURE : SUCCESS}" if OPTS[:"valgrind"]
   puts "  Loss:     #{"%.2f" % quality_lost} #{quality_failed ? FAILURE : SUCCESS}"
   puts "  Runtime:  #{"%.2f" % ft[:runtime]} #{runtime_failed ? FAILURE : SUCCESS}"
   puts
