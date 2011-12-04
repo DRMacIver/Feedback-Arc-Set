@@ -12,8 +12,8 @@ clean:
 %.o: %.c
 	gcc -c $(C_FLAGS) $< -o $@
 
-test: $(OBJ)
-	gcc -g -o test tournament.o permutations.o fas_tournament.o test.o
+test: fas
+	ruby tests.rb
 
 fas: $(OBJ)
 	gcc -g -o fas tournament.o permutations.o fas_tournament.o fas.o
