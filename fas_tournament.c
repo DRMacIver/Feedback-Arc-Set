@@ -319,3 +319,24 @@ size_t tie_starting_from(tournament *t, size_t n, size_t *items, size_t start_in
 
   return n;
 }
+
+size_t condorcet_boundary_from(tournament *t, size_t n, size_t *items, size_t start_index){
+  size_t boundary = start_index;
+
+  int boundary_change = 0;
+  do {
+    boundary_change = 0;
+
+    for(size_t i = start_index; i <= boundary; i++){
+      for(size_t j = boundary + 1; j < n; j++){
+        if(tournament_compare(t, items[j], items[i]) <= 0){
+          boundary = j;
+          boundary_change = 1;
+          break; 
+        }
+      }     
+    }
+  } while(boundary_change);
+
+  return boundary;
+}

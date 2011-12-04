@@ -32,6 +32,7 @@ int main(int argc, char **argv){
 	printf("Optimal ordering:");
 
   size_t i = 0;
+  size_t next_boundary = condorcet_boundary_from(t, ft->results, ft->optimal_ordering, i);
 
   for(;;){
     size_t next_i = tie_starting_from(t, ft->results, ft->optimal_ordering, i);
@@ -48,7 +49,12 @@ int main(int argc, char **argv){
     }
 
     if(next_i == ft->results) break;
+
     i = next_i;
+    if(i >= next_boundary){
+      printf(" ||");
+      next_boundary = condorcet_boundary_from(t, ft->results, ft->optimal_ordering, i);
+    }
 	}
   printf("\n");
 
