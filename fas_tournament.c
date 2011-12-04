@@ -365,7 +365,10 @@ fas_tournament *run_fas_tournament(tournament *t){
   multisort_by_score(t, scores, n, results);
   optimise_subranges_thoroughly(t, n, results);
   while(window_optimise(t, n, results, 5) || single_move_optimization(t, n, results));
+  window_optimise(t, n, results, 8); 
+  single_move_optimization(t, n, results);
   cycle_all_subranges(t, n, results, 25);
+  single_move_optimization(t, n, results);
 
 	ft->optimal_ordering = results;
   ft->score = score_fas_tournament(t, n, results);
