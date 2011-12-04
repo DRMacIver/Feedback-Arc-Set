@@ -344,10 +344,35 @@ int cycle_all_subranges(tournament *t, size_t n, size_t *items, size_t max_lengt
   return changed;
 }
 
+size_t *integer_range(size_t n){
+  size_t *results = malloc(sizeof(size_t) * n);
+	for(size_t i = 0; i < n; i++){
+		results[i] = i;
+	}
+  return results;
+}
+
+void heavy_duty_smoothing(tournament *t, size_t n, size_t *items){
+  optimise_subranges_thoroughly(t, n, items);
+  while(window_optimise(t, n, items, 5) || single_move_optimization(t, n, items)); 
+  window_optimise(t, n, items, 8); 
+  single_move_optimization(t, n, items);
+  while(cycle_all_subranges(t, n, items, 25) || single_move_optimization(t, n, items));
+}
+
+size_t *optimal_ordering(tournament *t){
+  size_t n = t->size;
+	size_t *results = integer_range(n);
+  double *scores = initial_scores(t);
+  multisort_by_score(t, scores, n, results);
+  heavy_duty_smoothing(t, n, results);
+  free(scores);
+  return results;
+}
+
 fas_tournament *run_fas_tournament(tournament *t){
 	if(t->size == 0) return NULL;
 
-  double *scores = initial_scores(t);
 
 	fas_tournament *ft = malloc(sizeof(fas_tournament));
 
@@ -355,25 +380,9 @@ fas_tournament *run_fas_tournament(tournament *t){
 	ft->orphans = NULL;
 
 	size_t n = t->size;
-
 	ft->results = n;
-	size_t *results = malloc(sizeof(size_t) * n);
-	for(size_t i = 0; i < n; i++){
-		results[i] = i;
-	}
-
-  multisort_by_score(t, scores, n, results);
-  optimise_subranges_thoroughly(t, n, results);
-  while(window_optimise(t, n, results, 5) || single_move_optimization(t, n, results));
-  window_optimise(t, n, results, 8); 
-  single_move_optimization(t, n, results);
-  cycle_all_subranges(t, n, results, 25);
-  single_move_optimization(t, n, results);
-
-	ft->optimal_ordering = results;
-  ft->score = score_fas_tournament(t, n, results);
-
-  free(scores);
+	ft->optimal_ordering = optimal_ordering(t);
+  ft->score = score_fas_tournament(t, n, ft->optimal_ordering);
 
 	return ft;
 }
