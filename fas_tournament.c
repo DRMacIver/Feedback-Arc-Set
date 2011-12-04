@@ -122,24 +122,11 @@ int double_compare(double x, double y){
   return (x > y) - (y > x);
 }
 
-typedef struct {
-  size_t size;
-  double *scores;
-  int *comparisons;
-} tournament_comparator;
-
-int compare_by_tournament(tournament_comparator *t, size_t i, size_t j){
-  int ij = t->comparisons[i * t->size + j];
-  int ji = t->comparisons[j * t->size + i];
-
-  return (ji - ij) || double_compare(t->scores[i], t->scores[j]);
-}
-
 // Insertion sort for now. Everything else is O(n^2) anyway
-void sort_by_comparator(tournament_comparator *tc, size_t n, size_t *values){
+void sort_by_score(size_t n, double *scores, size_t *values){
   for(size_t i = 1; i < n; i++){
     size_t k = i;
-    while(k > 0 && compare_by_tournament(tc, values[k], values[k - 1]) < 0){
+    while(k > 0 && scores[values[k]] < scores[values[k - 1]]){
       swap(values + k, values + k - 1);
       k--;
     }
@@ -282,49 +269,19 @@ void optimise_pretty_thoroughly(tournament *t, size_t n, size_t *items){
   }
 }
 
-#define CHUNK_SIZE 9
-int optimise_subranges_thoroughly(tournament *t, size_t n, size_t *items){
-  int changed = 0;
+#define CHUNK_SIZE 8
+void optimise_subranges_thoroughly(tournament *t, size_t n, size_t *items){
   for(size_t i = 0; i < n; i += CHUNK_SIZE){
     size_t length = CHUNK_SIZE;
     if(i + length > n) length = n - i;
-    changed |= brute_force_optimise(t, length, items + i);
+    brute_force_optimise(t, length, items + i);
   }
-  return changed;
 }
-
-int *build_comparison_table(tournament *t){
-  size_t n = t->size;
-
-  int *table = malloc(sizeof(int) * n * n);
-
-  for(size_t i = 0; i < n; i++){
-    for(size_t j = 0; j < n; j++){
-      table[i * n + j] = tournament_get(t, i, j) >= tournament_get(t, j, i);
-    }
-  }
-
-  int changed = 1;
-  while(changed){
-    changed = 0;
-    for(size_t i = 0; i < n; i++){
-      for(size_t j = 0; j < n; j++){
-        for(size_t k = 0; k < n; k++){
-          if(table[i * n + k] && table[k * n + j] && !table[i * n + j]){
-            changed = 1;
-            table[i * n + j] = 1;
-          }
-        }
-      }
-    }
-  }
-  
-  return table; 
-}
-
 
 fas_tournament *run_fas_tournament(tournament *t){
 	if(t->size == 0) return NULL;
+
+  double *scores = initial_scores(t);
 
 	fas_tournament *ft = malloc(sizeof(fas_tournament));
 
@@ -333,28 +290,20 @@ fas_tournament *run_fas_tournament(tournament *t){
 
 	size_t n = t->size;
 
-  tournament_comparator comparator;
-  comparator.size = n;
-  comparator.comparisons = build_comparison_table(t);
-  comparator.scores = initial_scores(t);
-
 	ft->results = n;
 	size_t *results = malloc(sizeof(size_t) * n);
 	for(size_t i = 0; i < n; i++){
 		results[i] = i;
 	}
 
-  sort_by_comparator(&comparator, n, results);
-
+  sort_by_score(n, scores, results);
   optimise_subranges_thoroughly(t, n, results);
-
-  while(window_optimise(t, n, results, 6) || single_move_optimization(t, n, results));
+  while(window_optimise(t, n, results, 5) || single_move_optimization(t, n, results));
 
 	ft->optimal_ordering = results;
   ft->score = score_fas_tournament(t, n, results);
 
-  free(comparator.scores);
-  free(comparator.comparisons);
+  free(scores);
 
 	return ft;
 }
