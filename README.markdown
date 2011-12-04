@@ -27,3 +27,5 @@ Downsides:
 * The command line interface is terribly rudimentary
 
 All that being said, it appears to work and work reasonably well.
+
+Note that the test suite is currently failing. This shouldn't be taken to be a bug - the quality and performance numbers in the set suite are more aspirational than currently achieved. 
