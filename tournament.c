@@ -29,12 +29,14 @@ inline double tournament_get(tournament *t, size_t i, size_t j){
 double tournament_set(tournament *t, size_t i, size_t j, double x){
   size_t n = t->size;
   CHECK_INDICES
+  if(i == j) return 0.0;
   return (t->entries[n * i + j] = x);
 }
 
 double tournament_add(tournament *t, size_t i, size_t j, double x){
   size_t n = t->size;
   CHECK_INDICES
+  if(i == j) return 0.0;
   return (t->entries[n * i + j] += x);
 }
 

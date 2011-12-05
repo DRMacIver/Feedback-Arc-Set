@@ -151,6 +151,7 @@ void multisort_by_score(tournament *t, double *scores, size_t n, size_t *items){
 
     multisort_by_score(t, scores, k, items);
     multisort_by_score(t, scores, n - k, items + k);
+    free(new_scores);
   }
 }
 
@@ -360,12 +361,64 @@ void heavy_duty_smoothing(tournament *t, size_t n, size_t *items){
   while(cycle_all_subranges(t, n, items, 25) || single_move_optimization(t, n, items));
 }
 
+
+tournament *bucket_tournament(tournament *t, size_t *items, size_t bucket_size){
+  size_t num_buckets = t->size / bucket_size + 1;
+
+  tournament *bt = new_tournament(num_buckets);
+
+  for(size_t i = 0; i < t->size; i++){
+    for(size_t j = 0; j < t->size; j++){
+      tournament_add(bt, i / bucket_size, j / bucket_size, tournament_get(t, items[i], items[j]));
+    }
+  }
+
+  return bt;
+}
+
 size_t *optimal_ordering(tournament *t){
   size_t n = t->size;
 	size_t *results = integer_range(n);
+
+  if(n <= JUST_BRUTE_FORCE_IT){
+    brute_force_optimise(t, n, results);
+    return results;
+  }
+
   double *scores = initial_scores(t);
   multisort_by_score(t, scores, n, results);
   heavy_duty_smoothing(t, n, results);
+
+  size_t bucket_size = 10;
+  tournament *bt = bucket_tournament(t, results, bucket_size);
+
+  size_t *optimal_bucket_ordering = optimal_ordering(bt);
+
+  fprintf(stderr, "Optimal bucket ordering: ");
+  for(size_t i = 0; i < bt->size; i++){
+    fprintf(stderr, "%lu ", optimal_bucket_ordering[i]);
+  }
+  fprintf(stderr, "\n");
+
+  size_t *working_buffer = malloc(sizeof(size_t) * n);
+
+  size_t writing_to = 0;
+
+  for(size_t i = 0; i < bt->size; i++){
+    size_t start_index = optimal_bucket_ordering[i] * bucket_size;
+    size_t end_index = start_index + bucket_size;
+    if(end_index >= n) end_index = n;
+
+    for(size_t j = start_index; j < end_index; j++) working_buffer[writing_to++] = results[j];
+  }
+
+  memcpy(results, working_buffer, sizeof(size_t) * n);
+  free(working_buffer);
+  free(optimal_bucket_ordering);
+  del_tournament(bt);
+
+  heavy_duty_smoothing(t, n, results);
+
   free(scores);
   return results;
 }
