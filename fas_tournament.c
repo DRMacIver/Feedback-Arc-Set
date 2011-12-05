@@ -396,7 +396,7 @@ void anneal(tournament *t, size_t n, size_t *items){
     if(j - i < JUST_BRUTE_FORCE_IT){
       brute_force_optimise(t, j - i, current_state + i);
     } else {
-      shuffle(j - i, current_state + i);
+      reverse(current_state + i, current_state + j);
     }
 
     double new_score = score_fas_tournament(t, n, current_state);
