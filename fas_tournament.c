@@ -379,11 +379,7 @@ void anneal(fas_tournament_options *opts, tournament *t, size_t n, size_t *items
   
     copy_range(save_buffer, n, current_state); 
 
-    if(j - i < JUST_BRUTE_FORCE_IT){
-      brute_force_optimise(t, j - i, current_state + i);
-    } else {
-      reverse(current_state + i, current_state + j);
-    }
+    reverse(current_state + i, current_state + j);
 
     double new_score = score_fas_tournament(t, n, current_state);
 
