@@ -3,6 +3,7 @@
 
 typedef struct {
   int include_shuffle_pass;
+  int include_annealing_pass;
 } fas_tournament_options;
 
 fas_tournament_options default_options();

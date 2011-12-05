@@ -1,4 +1,4 @@
-C_FLAGS=-pedantic --std=c99 -Wall -Werror -g
+C_FLAGS=-pedantic --std=c99 -Wall -Werror -g 
 
 SOURCE=$(wildcard *.c **/*.c)
 OBJ=$(SOURCE:.c=.o)
@@ -16,4 +16,4 @@ test: fas
 	ruby tests.rb
 
 fas: $(OBJ)
-	gcc -g -o fas tournament.o permutations.o fas_tournament.o fas.o
+	gcc -g -o fas tournament.o permutations.o fas_tournament.o fas.o -lm

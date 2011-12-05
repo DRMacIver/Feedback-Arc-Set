@@ -2,6 +2,7 @@
 #include "permutations.h"
 #include <string.h>
 #include <assert.h>
+#include <math.h>
 
 #define ACCURACY 0.001
 #define SMOOTHING 0.05
@@ -242,7 +243,6 @@ double *initial_scores(tournament *t){
 }
 
 void shuffle_optimisation(tournament *t, size_t n, size_t *items){
-  fprintf(stderr, "Shuffling\n");
   size_t *working_buffer = malloc(sizeof(size_t) * n);
 
   memcpy(working_buffer, items, sizeof(size_t) * n);
@@ -262,7 +262,6 @@ void shuffle_optimisation(tournament *t, size_t n, size_t *items){
     } else {
       failure_count++;
       if(failure_count > 1000){
-        fprintf(stderr, "failing after %lu tries\n", i);
         break;
       }
     }
@@ -356,12 +355,88 @@ void heavy_duty_smoothing(tournament *t, size_t n, size_t *items){
   while(cycle_all_subranges(t, n, items, 25) || single_move_optimization(t, n, items));
 }
 
+void copy_range(size_t *it, size_t n, size_t *items){
+  memcpy(it, items, n * sizeof(size_t));
+}
+
+size_t *clone_range(size_t n, size_t *items){
+  size_t *it = malloc(n * sizeof(size_t));
+  copy_range(it, n, items);
+  return it;
+}
+
+int with_probability(double p){
+  return rand() < p * RAND_MAX;
+}
+
+void anneal(tournament *t, size_t n, size_t *items){
+  assert(n >= 2);
+  double best_score = score_fas_tournament(t, n, items);
+
+  double temperature = 1000000;
+  double cooling_rate = 0.99;
+  double zero_point = 0.001;
+  double restart_probability = 0.05;
+  size_t max_restarts = 50;
+  size_t current_restarts = 0;
+
+  double current_score = best_score;
+  size_t *current_state  = clone_range(n, items);
+  size_t *save_buffer = clone_range(n, items);
+
+  while(temperature > zero_point){
+    size_t i = rand() % n;  
+    size_t j = rand() % n;
+  
+    if(i == j) continue;
+    if(i > j) swap(&i, &j);
+  
+    copy_range(save_buffer, n, current_state); 
+
+    if(j - i < JUST_BRUTE_FORCE_IT){
+      brute_force_optimise(t, j - i, current_state + i);
+    } else {
+      shuffle(j - i, current_state + i);
+    }
+
+    double new_score = score_fas_tournament(t, n, current_state);
+
+    double p = exp((new_score - current_score) / temperature);
+
+    if(new_score > best_score){
+      best_score = new_score;
+      copy_range(items, n, current_state);
+      current_restarts = 0;
+    }
+
+    if((new_score > current_score) || with_probability(p)){
+      current_score = new_score;
+    } else {
+      if(with_probability(restart_probability)){
+        if(current_restarts >= max_restarts) break;
+        current_restarts++;
+        current_score = best_score;
+        copy_range(current_state, n, items); 
+      } else {
+        copy_range(current_state, n, save_buffer); 
+      }
+    }
+    temperature *= cooling_rate;
+  }
+
+  free(current_state);
+  free(save_buffer);
+}
+
 size_t *optimal_ordering(fas_tournament_options *options, tournament *t){
   size_t n = t->size;
 	size_t *results = integer_range(n);
   double *scores = initial_scores(t);
   if(options->include_shuffle_pass) shuffle_optimisation(t, n, results);
   else multisort_by_score(t, scores, n, results);
+
+  if(options->include_annealing_pass) anneal(t, n, results);
+
   heavy_duty_smoothing(t, n, results);
   free(scores);
   return results;
@@ -403,6 +478,7 @@ fas_tournament_options default_options(){
   fas_tournament_options result;
 
   result.include_shuffle_pass = 0;
+  result.include_annealing_pass = 0;
 
   return result;
 }

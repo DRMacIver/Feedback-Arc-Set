@@ -41,6 +41,10 @@ int main(int argc, char **argv){
     options.include_shuffle_pass = 1;
   }
 
+  if(has_arg("--anneal", argc, argv)){
+    options.include_annealing_pass = 1;
+  }
+
   char *infile = get_arg("--infile=", argc, argv);
 
   if(infile){
