@@ -2,18 +2,13 @@
 #include "tournament.h"
 
 typedef struct {
-	double score;
-	size_t results;
-  size_t *optimal_ordering;
-  size_t num_orphans;
-  size_t *orphans;
-} fas_tournament;
+  int include_shuffle_pass;
+} fas_tournament_options;
 
-void del_fas_tournament(fas_tournament *t);
-
-fas_tournament *run_fas_tournament(tournament *t);
+fas_tournament_options default_options();
 
 double score_fas_tournament(tournament *t, size_t count, size_t *data);
+size_t *optimal_ordering(fas_tournament_options *options, tournament *t);
 
 size_t tie_starting_from(tournament *t, size_t n, size_t *items, size_t start_index);
 size_t condorcet_boundary_from(tournament *t, size_t n, size_t *items, size_t start_index);

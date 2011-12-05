@@ -9,12 +9,6 @@
 #define MAX_MISSES 5
 #define MIN_IMPROVEMENT 0.00001
 
-void del_fas_tournament(fas_tournament *t){
-  free(t->optimal_ordering);
-  free(t->orphans);
-  free(t);
-}
-
 int tournament_compare(tournament *t, size_t i, size_t j){
 	double x = tournament_get(t, i, j);
 	double y = tournament_get(t, j, i);
@@ -248,6 +242,7 @@ double *initial_scores(tournament *t){
 }
 
 void shuffle_optimisation(tournament *t, size_t n, size_t *items){
+  fprintf(stderr, "Shuffling\n");
   size_t *working_buffer = malloc(sizeof(size_t) * n);
 
   memcpy(working_buffer, items, sizeof(size_t) * n);
@@ -256,10 +251,8 @@ void shuffle_optimisation(tournament *t, size_t n, size_t *items){
 
   size_t failure_count = 0;
 
-  for(size_t i = 0; i < 1000; i++){
+  for(size_t i = 0; i < 100000000; i++){
     shuffle(n, working_buffer);
-    window_optimise(t, n, working_buffer, 5);
-    single_move_optimization(t, n, working_buffer);
     double score = score_fas_tournament(t, n, working_buffer);
 
     if(score > best_score){
@@ -268,7 +261,10 @@ void shuffle_optimisation(tournament *t, size_t n, size_t *items){
       best_score = score;
     } else {
       failure_count++;
-      if(failure_count > 50) break;
+      if(failure_count > 1000){
+        fprintf(stderr, "failing after %lu tries\n", i);
+        break;
+      }
     }
   }
 
@@ -360,31 +356,15 @@ void heavy_duty_smoothing(tournament *t, size_t n, size_t *items){
   while(cycle_all_subranges(t, n, items, 25) || single_move_optimization(t, n, items));
 }
 
-size_t *optimal_ordering(tournament *t){
+size_t *optimal_ordering(fas_tournament_options *options, tournament *t){
   size_t n = t->size;
 	size_t *results = integer_range(n);
   double *scores = initial_scores(t);
-  multisort_by_score(t, scores, n, results);
+  if(options->include_shuffle_pass) shuffle_optimisation(t, n, results);
+  else multisort_by_score(t, scores, n, results);
   heavy_duty_smoothing(t, n, results);
   free(scores);
   return results;
-}
-
-fas_tournament *run_fas_tournament(tournament *t){
-	if(t->size == 0) return NULL;
-
-
-	fas_tournament *ft = malloc(sizeof(fas_tournament));
-
-	ft->num_orphans = 0;
-	ft->orphans = NULL;
-
-	size_t n = t->size;
-	ft->results = n;
-	ft->optimal_ordering = optimal_ordering(t);
-  ft->score = score_fas_tournament(t, n, ft->optimal_ordering);
-
-	return ft;
 }
 
 size_t tie_starting_from(tournament *t, size_t n, size_t *items, size_t start_index){
@@ -395,7 +375,6 @@ size_t tie_starting_from(tournament *t, size_t n, size_t *items, size_t start_in
       if(c) return i;
     }
   }
-
   return n;
 }
 
@@ -418,4 +397,12 @@ size_t condorcet_boundary_from(tournament *t, size_t n, size_t *items, size_t st
   } while(boundary_change);
 
   return boundary;
+}
+
+fas_tournament_options default_options(){
+  fas_tournament_options result;
+
+  result.include_shuffle_pass = 0;
+
+  return result;
 }

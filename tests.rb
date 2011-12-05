@@ -9,11 +9,12 @@ require 'trollop'
 
 OPTS = Trollop::options do
   opt :"valgrind", "Run tests with valgrind", :default => false
+	opt :fasargs, "Additional arguments to pass to fas", :type => String
 end
 
 
 BASE = File.dirname(__FILE__)
-FAS = File.join(BASE, "fas")
+FAS = File.join(BASE, "fas") + (OPTS[:fasargs] ? ("  " + OPTS[:fasargs]) : "")
 
 TEST_CASES = ARGV.length > 0 ? ARGV : Dir["#{BASE}/testcases/*.data"]
 
@@ -56,6 +57,7 @@ TEST_CASES.each do |test|
     best_run = data["ordering"]
   end
 
+  puts File.basename(test).gsub(/.data$/, "")
   start = Time.now
   ft = fas(test)
   score = ft[:score]
@@ -77,7 +79,6 @@ TEST_CASES.each do |test|
   failed ||= quality_failed
   failed ||= runtime_failed
 
-  puts File.basename(test).gsub(/.data$/, "")
   puts "  Valgrind:      #{valgrind_failed ? FAILURE : SUCCESS}" if OPTS[:"valgrind"]
   puts "  Loss:     #{"%.2f" % quality_lost} #{quality_failed ? FAILURE : SUCCESS}"
   puts "  Runtime:  #{"%.2f" % ft[:runtime]} #{runtime_failed ? FAILURE : SUCCESS}"
