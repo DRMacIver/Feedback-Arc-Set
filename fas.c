@@ -37,13 +37,9 @@ int main(int argc, char **argv){
 
   fas_tournament_options options = default_options();
 
-  if(has_arg("--shuffle", argc, argv)){
-    options.include_shuffle_pass = 1;
-  }
-
-  if(has_arg("--anneal", argc, argv)){
-    options.include_annealing_pass = 1;
-  }
+  options.include_shuffle_pass = has_arg("--shuffle", argc, argv);
+  options.include_annealing_pass = has_arg("--anneal", argc, argv);
+  options.debug = has_arg("--debug", argc, argv);
 
   char *infile = get_arg("--infile=", argc, argv);
 

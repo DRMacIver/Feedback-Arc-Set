@@ -242,7 +242,7 @@ double *initial_scores(tournament *t){
   return scores;
 }
 
-void shuffle_optimisation(tournament *t, size_t n, size_t *items){
+void shuffle_optimisation(fas_tournament_options *opts, tournament *t, size_t n, size_t *items){
   size_t *working_buffer = malloc(sizeof(size_t) * n);
 
   memcpy(working_buffer, items, sizeof(size_t) * n);
@@ -256,6 +256,7 @@ void shuffle_optimisation(tournament *t, size_t n, size_t *items){
     double score = score_fas_tournament(t, n, working_buffer);
 
     if(score > best_score){
+      if(opts->debug) fprintf(stderr, "Shuffling improved best score %f -> %f\n", best_score, score);
       failure_count = 0;
       memcpy(items, working_buffer, sizeof(size_t) * n);
       best_score = score;
@@ -268,21 +269,6 @@ void shuffle_optimisation(tournament *t, size_t n, size_t *items){
   }
 
   free(working_buffer);
-}
-
-void optimise_pretty_thoroughly(tournament *t, size_t n, size_t *items){
-  if(n <= 10){
-    brute_force_optimise(t, n, items);
-  } else {
-    shuffle_optimisation(t, n, items);
-    for(size_t i = 0; i < 1000; i++){
-      if(!(window_optimise(t, n, items, 9) || single_move_optimization(t, n, items))) break;
-    }
-
-    size_t split = n / 2;
-    optimise_pretty_thoroughly(t, split, items);
-    optimise_pretty_thoroughly(t, n - split, items + split);
-  }
 }
 
 #define CHUNK_SIZE 8
@@ -369,15 +355,15 @@ int with_probability(double p){
   return rand() < p * RAND_MAX;
 }
 
-void anneal(tournament *t, size_t n, size_t *items){
+void anneal(fas_tournament_options *opts, tournament *t, size_t n, size_t *items){
   assert(n >= 2);
   double best_score = score_fas_tournament(t, n, items);
 
   double temperature = 1000000;
-  double cooling_rate = 0.99;
+  double cooling_rate = 0.9999;
   double zero_point = 0.001;
   double restart_probability = 0.05;
-  size_t max_restarts = 50;
+  size_t max_restarts = 100;
   size_t current_restarts = 0;
 
   double current_score = best_score;
@@ -404,6 +390,7 @@ void anneal(tournament *t, size_t n, size_t *items){
     double p = exp((new_score - current_score) / temperature);
 
     if(new_score > best_score){
+      if(opts->debug) fprintf(stderr, "Simulated annealing improved best score %f -> %f\n", best_score, new_score);
       best_score = new_score;
       copy_range(items, n, current_state);
       current_restarts = 0;
@@ -432,10 +419,12 @@ size_t *optimal_ordering(fas_tournament_options *options, tournament *t){
   size_t n = t->size;
 	size_t *results = integer_range(n);
   double *scores = initial_scores(t);
-  if(options->include_shuffle_pass) shuffle_optimisation(t, n, results);
+  if(options->include_shuffle_pass) shuffle_optimisation(options, t, n, results);
   else multisort_by_score(t, scores, n, results);
 
-  if(options->include_annealing_pass) anneal(t, n, results);
+  if(options->debug) fprintf(stderr, "Starting score %f\n", score_fas_tournament(t, n, results));
+
+  if(options->include_annealing_pass) anneal(options, t, n, results);
 
   heavy_duty_smoothing(t, n, results);
   free(scores);
@@ -446,7 +435,6 @@ size_t tie_starting_from(tournament *t, size_t n, size_t *items, size_t start_in
   for(size_t i = start_index+1; i < n; i++){
     for(size_t j = start_index; j < i; j++){
       int c = tournament_compare(t, items[i], items[j]);
-
       if(c) return i;
     }
   }
@@ -479,6 +467,7 @@ fas_tournament_options default_options(){
 
   result.include_shuffle_pass = 0;
   result.include_annealing_pass = 0;
+  result.debug = 0;
 
   return result;
 }
