@@ -242,15 +242,6 @@ double *initial_scores(tournament *t){
   return scores;
 }
 
-#define CHUNK_SIZE 8
-void optimise_subranges_thoroughly(tournament *t, size_t n, size_t *items){
-  for(size_t i = 0; i < n; i += CHUNK_SIZE){
-    size_t length = CHUNK_SIZE;
-    if(i + length > n) length = n - i;
-    brute_force_optimise(t, length, items + i);
-  }
-}
-
 void rotate_array(size_t n, size_t *items, size_t k){
   if(!k) return;
 
@@ -305,18 +296,12 @@ size_t *integer_range(size_t n){
 }
 
 void heavy_duty_smoothing(fas_tournament_options *opts, tournament *t, size_t n, size_t *items){
-  if(opts->debug) fprintf(stderr, "Optimising subranges\n");
-  optimise_subranges_thoroughly(t, n, items);
-  if(opts->debug) fprintf(stderr, "Done. Score is now %f\n", score_fas_tournament(t, n, items));
   if(opts->debug) fprintf(stderr, "Window optimising with a window of 5\n");
   while(window_optimise(t, n, items, 5) || single_move_optimization(t, n, items)); 
   if(opts->debug) fprintf(stderr, "Done. Score is now %f\n", score_fas_tournament(t, n, items));
   if(opts->debug) fprintf(stderr, "Window optimising with a window of 8\n");
   window_optimise(t, n, items, 8); 
   single_move_optimization(t, n, items);
-  if(opts->debug) fprintf(stderr, "Done. Score is now %f\n", score_fas_tournament(t, n, items));
-  if(opts->debug) fprintf(stderr, "Cycling subranges\n");
-  while(cycle_all_subranges(t, n, items, 25) || single_move_optimization(t, n, items));
   if(opts->debug) fprintf(stderr, "Done. Score is now %f\n", score_fas_tournament(t, n, items));
 }
 
@@ -332,6 +317,56 @@ size_t *clone_range(size_t n, size_t *items){
 
 int with_probability(double p){
   return rand() < p * RAND_MAX;
+}
+
+int is_trivial(tournament *t, size_t n, size_t *items){
+  for(size_t i = 0; i < n; i++)
+    for(size_t j = i+1; j < n; j++)
+      if(tournament_compare(t, i, j) > 0) return 0;
+
+  return 1;
+}
+
+void recursively_subsample(fas_tournament_options *opts, tournament *t, size_t n, size_t *items, size_t sample_count){
+  if(is_trivial(t, n, items)) return; 
+ 
+  if(n <= JUST_BRUTE_FORCE_IT){
+    brute_force_optimise(t, n, items);  
+    return;
+  }
+
+  double best_score = score_fas_tournament(t, n, items);
+  if(opts->debug) fprintf(stderr, "Starting a shuffle of %lu items with score %f\n", n, best_score);
+
+  size_t *working_buffer  = clone_range(n, items);
+
+  size_t max_failures = 100;
+  size_t failure_count = 0;
+
+  for(size_t i = 0; i < sample_count; i++){
+    shuffle(n, working_buffer);
+    double score = score_fas_tournament(t, n, working_buffer);
+
+    if(score > best_score){
+      if(opts->debug) fprintf(stderr, "Shuffling improved best score %f -> %f after %lu iterations\n", best_score, score, i);
+      failure_count = 0;
+      memcpy(items, working_buffer, sizeof(size_t) * n);
+      best_score = score;
+    } else {
+      if(failure_count >= max_failures){
+        if(opts->debug) fprintf(stderr, "Stopping shuffling with score %f after %lu iterations with no improvement\n", best_score, failure_count);
+        break;
+      }
+      failure_count++;
+    }
+  }
+
+  free(working_buffer);
+
+  size_t k = n / 2;
+
+  recursively_subsample(opts, t, k, items, sample_count);
+  recursively_subsample(opts, t, n - k, items + k, sample_count);
 }
 
 void anneal(fas_tournament_options *opts, tournament *t, size_t n, size_t *items){
@@ -416,10 +451,11 @@ void anneal(fas_tournament_options *opts, tournament *t, size_t n, size_t *items
 size_t *optimal_ordering(fas_tournament_options *options, tournament *t){
   size_t n = t->size;
 	size_t *results = integer_range(n);
-  if(options->debug) fprintf(stderr, "Starting score %f\n", score_fas_tournament(t, n, results));
 
-  anneal(options, t, n, results);
+  recursively_subsample(options, t, n, results, 200);
+  if(options->debug) fprintf(stderr, "Starting local search with a score of %f\n", score_fas_tournament(t, n, results));
   heavy_duty_smoothing(options, t, n, results);
+  if(options->debug) fprintf(stderr, "Smoothed to score of %f\n", score_fas_tournament(t, n, results));
 
   return results;
 }
