@@ -203,8 +203,10 @@ double score_fas_tournament(tournament *t, size_t count, size_t *data){
 	double score = 0.0;
 
 	for(size_t i = 0; i < count; i++){
+    double *score_array = t->entries + data[i] * t->size;
+
 		for(size_t j = i + 1; j < count; j++){
-			score += tournament_get(t, data[i], data[j]);
+			score += score_array[data[j]];
 		}
 	}
 
