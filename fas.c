@@ -32,13 +32,10 @@ char *get_arg(char *flag, int argc, char **argv){
 }
 
 int main(int argc, char **argv){
-  srand(time(NULL) ^ getpid());
   FILE *argf = stdin;
 
   fas_tournament_options options = default_options();
 
-  options.include_shuffle_pass = has_arg("--shuffle", argc, argv);
-  options.include_annealing_pass = has_arg("--anneal", argc, argv);
   options.debug = has_arg("--debug", argc, argv);
 
   char *infile = get_arg("--infile=", argc, argv);

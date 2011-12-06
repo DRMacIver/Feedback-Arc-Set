@@ -242,35 +242,6 @@ double *initial_scores(tournament *t){
   return scores;
 }
 
-void shuffle_optimisation(fas_tournament_options *opts, tournament *t, size_t n, size_t *items){
-  size_t *working_buffer = malloc(sizeof(size_t) * n);
-
-  memcpy(working_buffer, items, sizeof(size_t) * n);
-
-  double best_score = score_fas_tournament(t, n, items);
-
-  size_t failure_count = 0;
-
-  for(size_t i = 0; i < 100000000; i++){
-    shuffle(n, working_buffer);
-    double score = score_fas_tournament(t, n, working_buffer);
-
-    if(score > best_score){
-      if(opts->debug) fprintf(stderr, "Shuffling improved best score %f -> %f\n", best_score, score);
-      failure_count = 0;
-      memcpy(items, working_buffer, sizeof(size_t) * n);
-      best_score = score;
-    } else {
-      failure_count++;
-      if(failure_count > 1000){
-        break;
-      }
-    }
-  }
-
-  free(working_buffer);
-}
-
 #define CHUNK_SIZE 8
 void optimise_subranges_thoroughly(tournament *t, size_t n, size_t *items){
   for(size_t i = 0; i < n; i += CHUNK_SIZE){
@@ -333,12 +304,20 @@ size_t *integer_range(size_t n){
   return results;
 }
 
-void heavy_duty_smoothing(tournament *t, size_t n, size_t *items){
+void heavy_duty_smoothing(fas_tournament_options *opts, tournament *t, size_t n, size_t *items){
+  if(opts->debug) fprintf(stderr, "Optimising subranges\n");
   optimise_subranges_thoroughly(t, n, items);
+  if(opts->debug) fprintf(stderr, "Done. Score is now %f\n", score_fas_tournament(t, n, items));
+  if(opts->debug) fprintf(stderr, "Window optimising with a window of 5\n");
   while(window_optimise(t, n, items, 5) || single_move_optimization(t, n, items)); 
+  if(opts->debug) fprintf(stderr, "Done. Score is now %f\n", score_fas_tournament(t, n, items));
+  if(opts->debug) fprintf(stderr, "Window optimising with a window of 8\n");
   window_optimise(t, n, items, 8); 
   single_move_optimization(t, n, items);
+  if(opts->debug) fprintf(stderr, "Done. Score is now %f\n", score_fas_tournament(t, n, items));
+  if(opts->debug) fprintf(stderr, "Cycling subranges\n");
   while(cycle_all_subranges(t, n, items, 25) || single_move_optimization(t, n, items));
+  if(opts->debug) fprintf(stderr, "Done. Score is now %f\n", score_fas_tournament(t, n, items));
 }
 
 void copy_range(size_t *it, size_t n, size_t *items){
@@ -358,27 +337,50 @@ int with_probability(double p){
 void anneal(fas_tournament_options *opts, tournament *t, size_t n, size_t *items){
   assert(n >= 2);
   double best_score = score_fas_tournament(t, n, items);
+  double worst_score = best_score;
 
-  double temperature = 1000000;
-  double cooling_rate = 0.9999;
+  size_t *current_state  = clone_range(n, items);
+
+  size_t failure_count = 0;
+
+  for(size_t i = 0; i < 10000; i++){
+    shuffle(n, current_state);
+    double score = score_fas_tournament(t, n, current_state);
+
+    if(score < worst_score) worst_score = score;
+    if(score > best_score){
+      if(opts->debug) fprintf(stderr, "Shuffling improved best score %f -> %f after %lu iterations\n", best_score, score, i);
+      failure_count = 0;
+      memcpy(items, current_state, sizeof(size_t) * n);
+      best_score = score;
+    } else {
+      if(failure_count >= 100){
+        if(opts->debug) fprintf(stderr, "Stopping shuffling after %lu iterations with no improvement\n", failure_count);
+        break;
+      }
+      failure_count++;
+    }
+  }
+
+  if(opts->debug) fprintf(stderr, "Scores lie in range [%f, %f]\n", worst_score, best_score);
+
+  double starting_score = best_score;
+
+  double temperature = best_score;
+  double cooling_rate = 0.95;
   double zero_point = 0.001;
   double restart_probability = 0.05;
   size_t max_restarts = 100;
   size_t current_restarts = 0;
-
   double current_score = best_score;
-  size_t *current_state  = clone_range(n, items);
-  size_t *save_buffer = clone_range(n, items);
 
   while(temperature > zero_point){
-    size_t i = rand() % n;  
-    size_t j = rand() % n;
+    size_t i = random_number(n);
+    size_t j = random_number(n);
   
     if(i == j) continue;
     if(i > j) swap(&i, &j);
   
-    copy_range(save_buffer, n, current_state); 
-
     reverse(current_state + i, current_state + j);
 
     double new_score = score_fas_tournament(t, n, current_state);
@@ -401,29 +403,24 @@ void anneal(fas_tournament_options *opts, tournament *t, size_t n, size_t *items
         current_score = best_score;
         copy_range(current_state, n, items); 
       } else {
-        copy_range(current_state, n, save_buffer); 
+        reverse(current_state + i, current_state + j);
       }
     }
     temperature *= cooling_rate;
   }
+  if(opts->debug) fprintf(stderr, "Simulated annealing finished with best score %f (%.2f%% improvement)\n", best_score, ((best_score - starting_score) / starting_score) * 100);
 
   free(current_state);
-  free(save_buffer);
 }
 
 size_t *optimal_ordering(fas_tournament_options *options, tournament *t){
   size_t n = t->size;
 	size_t *results = integer_range(n);
-  double *scores = initial_scores(t);
-  if(options->include_shuffle_pass) shuffle_optimisation(options, t, n, results);
-  else multisort_by_score(t, scores, n, results);
-
   if(options->debug) fprintf(stderr, "Starting score %f\n", score_fas_tournament(t, n, results));
 
-  if(options->include_annealing_pass) anneal(options, t, n, results);
+  anneal(options, t, n, results);
+  heavy_duty_smoothing(options, t, n, results);
 
-  heavy_duty_smoothing(t, n, results);
-  free(scores);
   return results;
 }
 
@@ -461,8 +458,6 @@ size_t condorcet_boundary_from(tournament *t, size_t n, size_t *items, size_t st
 fas_tournament_options default_options(){
   fas_tournament_options result;
 
-  result.include_shuffle_pass = 0;
-  result.include_annealing_pass = 0;
   result.debug = 0;
 
   return result;

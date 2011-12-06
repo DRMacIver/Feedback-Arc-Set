@@ -2,8 +2,6 @@
 #include "tournament.h"
 
 typedef struct {
-  int include_shuffle_pass;
-  int include_annealing_pass;
   int debug;
 } fas_tournament_options;
 

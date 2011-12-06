@@ -1,4 +1,5 @@
 #include "permutations.h"
+#include <assert.h>
 
 // Permutations of arrays of size_t
 
@@ -45,9 +46,32 @@ size_t next_permutation(size_t length, size_t *data){
 	return k;
 }
 
+inline static size_t saturate(size_t v){
+	v--;
+	v |= v >> 1;
+	v |= v >> 2;
+	v |= v >> 4;
+	v |= v >> 8;
+	v |= v >> 16;
+	v |= v >> 32;
+	return v;
+}
+
+size_t random_number(size_t n){
+	size_t mask = saturate(n);
+
+	size_t result;
+
+	for(;;){
+		result = rand() & mask;
+		if(result < n) return result;
+	}
+}
+
 void shuffle(size_t length, size_t *data){
 	for(size_t k = length - 1; k > 0; k--){
-		size_t j = rand() % (k + 1);
+		size_t j = random_number(k+1);
+		assert(j <= k);
 		swap(data + j, data + k);
 	}
 }
