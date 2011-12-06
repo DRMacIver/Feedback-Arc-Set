@@ -370,23 +370,6 @@ size_t *optimal_ordering(tournament *t){
   return results;
 }
 
-fas_tournament *run_fas_tournament(tournament *t){
-	if(t->size == 0) return NULL;
-
-
-	fas_tournament *ft = malloc(sizeof(fas_tournament));
-
-	ft->num_orphans = 0;
-	ft->orphans = NULL;
-
-	size_t n = t->size;
-	ft->results = n;
-	ft->optimal_ordering = optimal_ordering(t);
-  ft->score = score_fas_tournament(t, n, ft->optimal_ordering);
-
-	return ft;
-}
-
 size_t tie_starting_from(tournament *t, size_t n, size_t *items, size_t start_index){
   for(size_t i = start_index+1; i < n; i++){
     for(size_t j = start_index; j < i; j++){

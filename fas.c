@@ -26,39 +26,40 @@ int main(int argc, char **argv){
 
 	tournament *t = read_tournament(argf);
 
-	fas_tournament *ft = run_fas_tournament(t);
+  size_t n = t->size;
+  size_t *items = optimal_ordering(t);
 
-	printf("Score: %f\n", ft->score);
+	printf("Score: %f\n", score_fas_tournament(t, n, items));
 	printf("Optimal ordering:");
 
   size_t i = 0;
-  size_t next_boundary = condorcet_boundary_from(t, ft->results, ft->optimal_ordering, i);
+  size_t next_boundary = condorcet_boundary_from(t, n, items, i);
 
   for(;;){
-    size_t next_i = tie_starting_from(t, ft->results, ft->optimal_ordering, i);
+    size_t next_i = tie_starting_from(t, n, items, i);
 
     if(next_i > i + 1){
       printf(" [");
       for(size_t j = i; j < next_i; j++){
         if(j > i) printf(" ");
-        printf("%lu", ft->optimal_ordering[j]);
+        printf("%lu", items[j]);
       }
       printf("]");
     } else {
-      printf(" %lu", ft->optimal_ordering[i]);
+      printf(" %lu", items[i]);
     }
 
-    if(next_i == ft->results) break;
+    if(next_i == n) break;
 
     i = next_i;
     if(i > next_boundary){
       printf(" ||");
-      next_boundary = condorcet_boundary_from(t, ft->results, ft->optimal_ordering, i);
+      next_boundary = condorcet_boundary_from(t, n, items, i);
     }
 	}
   printf("\n");
 
-	del_fas_tournament(ft);
+  free(items);
 	del_tournament(t);
 
 	return 0;
