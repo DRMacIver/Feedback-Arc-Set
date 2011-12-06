@@ -9,12 +9,6 @@
 #define MAX_MISSES 5
 #define MIN_IMPROVEMENT 0.00001
 
-void del_fas_tournament(fas_tournament *t){
-  free(t->optimal_ordering);
-  free(t->orphans);
-  free(t);
-}
-
 int tournament_compare(tournament *t, size_t i, size_t j){
 	double x = tournament_get(t, i, j);
 	double y = tournament_get(t, j, i);
