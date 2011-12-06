@@ -2,7 +2,6 @@
 #include <unistd.h>
 #include <stdio.h>
 
-#include "tournament.h"
 #include "fas_tournament.h"
 
 int main(int argc, char **argv){

@@ -16,4 +16,4 @@ test: fas
 	ruby tests.rb
 
 fas: $(OBJ)
-	gcc -g -o fas tournament.o permutations.o fas_tournament.o fas.o
+	gcc -g -o fas permutations.o fas_tournament.o fas.o
