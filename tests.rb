@@ -60,12 +60,23 @@ TEST_CASES.each do |test|
   ft = fas(test)
   score = ft[:score]
 
-  valgrind_failed = ft[:valgrind_failed]
+  ordering_error = nil
+
+  values_found = ft[:ordering].sort
+
+  values_found.each_with_index do |x, i|
+    if x != i 
+      ordering_error = "Found wrong value #{x} at index #{i}"
+      break
+    end
+  end
+
+  valgrind_failed = ft[:valgrind_failed] || ordering_error
 
   if ft[:score] > best_score
     best_score = ft[:score]
     best_run = ft[:ordering]
-    File.open(score_file, "w"){|o| o.puts(JSON.pretty_generate({:score => best_score, :ordering => best_run})) } unless valgrind_failed
+    File.open(score_file, "w"){|o| o.puts(JSON.pretty_generate({:score => best_score, :ordering => best_run})) } unless correctness_error
   end
   
   quality_lost = (1 - score / best_score) * 100
@@ -81,6 +92,7 @@ TEST_CASES.each do |test|
   puts "  Valgrind:      #{valgrind_failed ? FAILURE : SUCCESS}" if OPTS[:"valgrind"]
   puts "  Loss:     #{"%.2f" % quality_lost} #{quality_failed ? FAILURE : SUCCESS}"
   puts "  Runtime:  #{"%.2f" % ft[:runtime]} #{runtime_failed ? FAILURE : SUCCESS}"
+  puts "  Correctness:  #{ordering_error} #{ordering_error ? FAILURE : SUCCESS}"
   puts
 end
 
