@@ -75,3 +75,13 @@ void shuffle(size_t length, size_t *data){
 		swap(data + j, data + k);
 	}
 }
+
+void generate_shuffled_range(size_t length, size_t *data){
+	data[0] = 0;
+	for(size_t i = 1; i < length; i++){
+		size_t j = random_number(i + 1);
+		if(j < i) data[i] = data[j];
+		data[j] = i;
+	}
+}
+
