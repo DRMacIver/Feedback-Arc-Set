@@ -226,6 +226,16 @@ static inline void swap(size_t *x, size_t *y){
 	*y = z;
 }
 
+void sort(size_t n, size_t *values){
+  for(size_t i = 1; i < n; i++){
+    size_t k = i;
+    while(k > 0 && values[k] < values[k - 1]){
+      swap(values + k, values + k - 1);
+      k--;
+    }
+  }
+}
+
 int brute_force_optimise(tournament *t, size_t n, size_t *items){
 	if(n <= 1) return 0;
 	if(n == 2){
@@ -240,6 +250,7 @@ int brute_force_optimise(tournament *t, size_t n, size_t *items){
 
 	size_t *working_buffer = malloc(sizeof(size_t) * n);
 	memcpy(working_buffer, items, n * sizeof(size_t));
+  sort(n, working_buffer);
 
 	while(next_permutation(n, working_buffer) < n){
 		double score = score_fas_tournament(t, n, working_buffer);
