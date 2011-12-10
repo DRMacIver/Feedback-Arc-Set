@@ -1,0 +1,135 @@
+\documentclass[a4paper,10pt]{article}
+
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{amsthm}
+
+\newtheorem{prop}{Proposition}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}{Corollary}[theorem]
+
+%opening
+\title{Some lower bounds on best scores for Weighted FAS Tournaments}
+\author{David R. MacIver}
+
+\begin{document}
+
+\maketitle
+
+The problem we consider is the following:
+
+We have an $n \times n$ matrix $A$ and a permutation $\pi$ of $1 \ldots n$. We define the weight of $\pi$ as
+
+\[ w_A(\pi) = \sum_{\pi(i) < \pi(j)} A_{i j} \]
+
+Where $A$ is given we will just write $w(\pi)$
+
+We are interested in finding permutations which maximise w.
+
+\begin{prop}
+  \[ w_{A + B}(\pi) = w_A(\pi) + w_B(\pi) \]
+\end{prop}
+
+\begin{prop}
+  If $\tau$ is the reversing permutation $i \to n + 1 - i$ then $w(\pi) + w(\tau \cdot \pi) = \sum A = \sum_{i, j} A_ij$
+\end{prop}
+
+\begin{lemma}
+If $A$ is symmetric then $\pi \to w(\pi)$ is a constant function $w(\pi) = \frac{1}{2} \sum A$
+\end{lemma}
+
+\begin{proof}
+We have 
+\begin{align*}
+w(\tau \cdot \pi) &= \sum_{(\tau \cdot \pi)(i) < (\tau \cdot \pi)(j)} A_{ij} \\
+& = \sum_{\pi(j) < \pi(i)} A_{ij} \\
+& = \sum_{\pi(j) < \pi(i)} A_{ji} \\
+& = w(\pi) \\
+\end{align*}
+
+Therefore $2 w(\pi) = \sum A$ and the result is proved.
+\qed
+\end{proof}
+
+Between this and the additivity of $W$ we can decompose $A$ into its symmetric and antisymmetric parts and maximizing $w$ is then merely a matter of maximizing $w$ with respect to the antisymmetric part. We will therefore assume $A$ is antisymmetric from now on. In particular $\sum A = 0$ and $w(\tau \cdot \pi) = - w(\pi)$
+
+We wish to establish some existence proofs on how large $w(\pi)$ can be given a known $A$. We will do this by considering picking a permutation uniformly at random. Let $\chi$ be a random variable drawn from such a distribution.
+
+\begin{theorem}
+\[ P(w(\chi) > t) = P(w(\chi) < -t) \]
+\end{theorem}
+
+\begin{proof}
+$w(\chi) > t$ iff $w(\tau \cdot \chi) < t$. The sets of permutations satisfying each condition are therefore the same size, so by uniformity have the same probability.
+\end{proof}
+
+\begin{corollary}
+$E(\chi) = 0$
+\end{corollary}
+
+\begin{corollary}
+There exists $\pi$ with $w(\pi) >= 0$. Unless $w$ is uniformly 0 for all $\pi$ then there exists $\pi$ with $w(\pi) > 0$.
+\end{corollary}
+
+This is of course not a very interesting lower bound, but it's a start.
+
+Let $i < j$. Then $S_{ij}$ is the random variable that has value $1$ if $\pi(i) < \pi(j)$ or $-1$ otherwise.
+
+\begin{prop}
+  \[ w(\chi) = \sum_{i < j} A_{ij} S_{ij} \]
+\end{prop}
+
+\begin{prop}
+\[ E(S_{ij}) = 0 \]
+\[ Var(S_{ij}) = 1 \]
+
+\end{prop}
+
+\begin{lemma}
+Let $i < j$, $k < l$. Then $S_{ij}$ and $S_{kl}$ are independent unless $i = k$ and $j = l$. 
+\end{lemma}
+
+Note that although the $S_{ij}$ are pairwise independent, they are most definitely not independent. They're not even triplewise independent. Fortunately pairwise independence is enough for us.
+
+\begin{proof}
+If none of the four are equal then this is obvious. If one of the two is equal it may be proven by considering permutations of the set $\{1, 2, 3\}$ and enumerating cases.
+\end{proof}
+
+
+\begin{theorem}
+\[ Var(w(\chi)) = \sum_{i < j} A_{ij}^2 \]
+\end{theorem}
+
+\begin{proof}
+Because the $S_{ij}$ are pairwise independent the variance of their sum is the sum of their variances. Therefore
+
+\begin{align*}
+Var(w(\chi)) &= Var(\sum_{i < j} A_{ij} S_{ij}) \\
+&= \sum_{i < j} Var(A_{ij} S_{ij}) \\
+&= \sum_{i < j} A_{ij}^2 Var(S_{ij}) \\
+&= \sum_{i < j} A_{ij}^2 Var(S_{ij}) \\
+&= \sum_{i < j} A_{ij}^2  \\
+\end{align*}
+\end{proof}
+
+Which gives us as a corollary:
+
+\begin{theorem}
+There exists a permutation $\pi$ with 
+
+\[ w(\pi) \geq \sqrt{ \sum_{i < j} A_{ij}^2  } \]
+\end{theorem}
+
+\begin{proof}
+The right hand side is the standard deviation of $w(\chi)$. The mean is zero, therefore there must be a permutation $\pi$ with $|w(\pi)|$ at least that value. If $w(\pi)$ is negative then replace $\pi$ with $\tau \cdot \pi$.
+\end{proof}
+
+\begin{corollary}
+If we now do not assume that $A$ is antisymmetric, there exists a permutation $\pi$ with
+
+\[ w(\pi) \geq \frac{1}{2} \left( \sum A + \sqrt{ \sum_{i < j} (A_{ij} - A_{ji})^2  } \right) \]
+\end{corollary}
+
+\end{document}
