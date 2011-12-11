@@ -71,7 +71,9 @@ TEST_CASES.each do |test|
     end
   end
 
-  valgrind_failed = ft[:valgrind_failed] || ordering_error
+  valgrind_failed = ft[:valgrind_failed] 
+
+  correctness_error = valgrind_failed || ordering_error
 
   if ft[:score] > best_score
     best_score = ft[:score]
