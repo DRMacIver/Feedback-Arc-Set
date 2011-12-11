@@ -3,6 +3,7 @@
 #include <string.h>
 #include <assert.h>
 #include <ctype.h>
+#include <math.h>
 
 #define ACCURACY 0.001
 #define SMOOTHING 0.05
@@ -546,10 +547,66 @@ void heavy_duty_smoothing(tournament *t, size_t n, size_t *items){
   while(cycle_all_subranges(t, n, items, 25) || single_move_optimization(t, n, items));
 }
 
+double best_score_lower_bound(tournament *t, size_t n, size_t *items){
+  double tot = 0.0;
+  double vtot = 0.0;
+
+  for(size_t i = 0; i < n; i++){
+    for(size_t j = i+1; j < n; j++){
+      double aij = tournament_get(t, items[i], items[j]);
+      double aji = tournament_get(t, items[j], items[i]);
+
+      tot += aij;
+      tot += aji;
+
+      vtot += (aij - aji) * (aij - aji);
+    }
+  }
+
+  return 0.5 * tot + 0.5 * sqrt(vtot);
+}
+
+int shuffle_to_optimality(tournament *t, size_t n, size_t *items){
+  if(n <= JUST_BRUTE_FORCE_IT){
+    return brute_force_optimise(t, n, items);
+  }  
+
+  int changed = 0;
+  while(score_fas_tournament(t, n, items) < best_score_lower_bound(t, n, items)){
+    changed = 1;
+    shuffle(n, items);
+  }
+  return changed;
+}
+
+void shuffle_subranges_to_optimality(tournament *t, size_t n, size_t *items){
+  if(n <= JUST_BRUTE_FORCE_IT){
+    brute_force_optimise(t, n, items);
+    return;
+  }  
+
+  size_t max_failures = 100;
+
+  size_t failure_count = 0;
+
+  while(failure_count < max_failures){
+    size_t i = random_number(n);
+    size_t j = random_number(n);
+
+    if(i == j) continue;
+    if(i > j) swap(&i, &j);
+    
+    if(shuffle_to_optimality(t, j - i, items + i)) failure_count = 0;
+    else failure_count++;
+  }
+
+}
+
 size_t *optimal_ordering(tournament *t){
   size_t n = t->size;
 	size_t *results = integer_range(n);
   double *scores = initial_scores(t);
+  shuffle_to_optimality(t, n, results);
   multisort_by_score(t, scores, n, results);
   heavy_duty_smoothing(t, n, results);
   free(scores);
@@ -588,3 +645,4 @@ size_t condorcet_boundary_from(tournament *t, size_t n, size_t *items, size_t st
 
   return boundary;
 }
+

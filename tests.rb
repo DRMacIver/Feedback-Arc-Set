@@ -31,7 +31,7 @@ def fas(file)
 	end
   valgrind_failed = $?.exitstatus != 0
   runtime = Time.now - t
-  score, ordering = results.split("\n");
+  score, lb, ordering = results.split("\n");
 
   { :score => score.gsub(/Score: */, "").to_f,
     :ordering => ordering.gsub(/^.+: */, "").gsub(/[^0-9 ]/, "").split.map{|x| x.to_i},
