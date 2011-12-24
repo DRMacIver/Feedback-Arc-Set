@@ -1,7 +1,7 @@
-C_FLAGS=-pedantic --std=c99 -Wall -Werror -g
+C_FLAGS=-pedantic -Wall -Werror -g -Wno-write-strings
 
-SOURCE=$(wildcard *.c **/*.c)
-OBJ=$(SOURCE:.c=.o)
+SOURCE=$(wildcard *.cpp )
+OBJ=$(SOURCE:.cpp=.o)
 
 all: $(OBJ)
 
@@ -9,7 +9,7 @@ clean:
 	rm -rf $(OBJ)
 	rm -f fas
 
-%.o: %.c
+%.o: %.cpp
 	gcc -c $(C_FLAGS) $< -o $@
 
 test: fas

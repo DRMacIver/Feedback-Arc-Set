@@ -3,7 +3,7 @@
 
 typedef struct {
   size_t size;
-  double entries[];
+  double entries[1];
 } tournament;
 
 tournament *new_tournament(int n);

@@ -13,7 +13,7 @@
 
 tournament *new_tournament(int n){
   size_t size = sizeof(tournament) + sizeof(double) * n * n;
-  tournament *t = malloc(size);
+  tournament *t = (tournament*)malloc(size);
   memset(t, '\0', size);
   t->size = n;
   return t;
@@ -47,8 +47,8 @@ double tournament_add(tournament *t, size_t i, size_t j, double x){
 void print_tournament(FILE *f, tournament *t){
   size_t n = t-> size;
 
-  for(int i = 0; i < n; i++){
-    for(int j = 0; j < n; j++){
+  for(size_t i = 0; i < n; i++){
+    for(size_t j = 0; j < n; j++){
       if(j > 0) fprintf(f, " ");
       fprintf(f, "%.2f", tournament_get(t, i, j));
     }
@@ -78,7 +78,7 @@ size_t count_tokens(char *c){
 }
 
 int read_line(size_t *buffer_size, char **buffer, FILE *f){
-  if(!*buffer) *buffer = malloc(*buffer_size);
+  if(!*buffer) *buffer = (char*) malloc(*buffer_size);
 
   size_t written = 0;
   
@@ -93,7 +93,7 @@ int read_line(size_t *buffer_size, char **buffer, FILE *f){
 
     if(written == *buffer_size){
       *buffer_size *= 2;
-      *buffer = realloc(*buffer, *buffer_size);
+      *buffer = (char*)realloc(*buffer, *buffer_size);
     }
 
     (*buffer)[written++] = c;
@@ -101,7 +101,7 @@ int read_line(size_t *buffer_size, char **buffer, FILE *f){
 
   if(written == *buffer_size){
     *buffer_size *= 2;
-    *buffer = realloc(*buffer, *buffer_size);
+    *buffer = (char*)realloc(*buffer, *buffer_size);
   }
 
   (*buffer)[written] = '\0';
@@ -249,7 +249,7 @@ int brute_force_optimise(tournament *t, size_t n, size_t *items){
 
   int changed = 0;
 
-	size_t *working_buffer = malloc(sizeof(size_t) * n);
+	size_t *working_buffer = (size_t*)malloc(sizeof(size_t) * n);
 	memcpy(working_buffer, items, n * sizeof(size_t));
   sort(n, working_buffer);
 
@@ -328,7 +328,7 @@ void multisort_by_score(tournament *t, double *scores, size_t n, size_t *items){
     size_t k = n/2;
     size_t pivot = items[k];
 
-    double *new_scores = malloc(sizeof(double) * t->size);
+    double *new_scores = (double*)malloc(sizeof(double) * t->size);
 
     for(size_t i = 0; i < t->size; i++){
       new_scores[i] = tournament_get(t, pivot, i);
@@ -400,8 +400,8 @@ int single_move_optimization(tournament *t, size_t n, size_t *items){
 
 #define SCORE_SMOOTHING 0.1
 double *initial_scores(tournament *t){
-  double *scores = malloc(sizeof(double) * t->size);
-  double *working_buffer = malloc(sizeof(double) * t->size);
+  double *scores = (double*)malloc(sizeof(double) * t->size);
+  double *working_buffer = (double*)malloc(sizeof(double) * t->size);
 
   for(size_t i = 0; i < t->size; i++){
     scores[i] = 1;
@@ -435,7 +435,7 @@ double *initial_scores(tournament *t){
 }
 
 void shuffle_optimisation(tournament *t, size_t n, size_t *items){
-  size_t *working_buffer = malloc(sizeof(size_t) * n);
+  size_t *working_buffer = (size_t*)malloc(sizeof(size_t) * n);
 
   memcpy(working_buffer, items, sizeof(size_t) * n);
 
@@ -532,7 +532,7 @@ int cycle_all_subranges(tournament *t, size_t n, size_t *items, size_t max_lengt
 }
 
 size_t *integer_range(size_t n){
-  size_t *results = malloc(sizeof(size_t) * n);
+  size_t *results = (size_t*)malloc(sizeof(size_t) * n);
 	for(size_t i = 0; i < n; i++){
 		results[i] = i;
 	}
