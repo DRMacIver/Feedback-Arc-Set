@@ -11,6 +11,10 @@
 #define MAX_MISSES 5
 #define MIN_IMPROVEMENT 0.00001
 
+namespace fas_tournament{
+
+using namespace permutations;
+
 tournament *new_tournament(int n){
   size_t size = sizeof(tournament) + sizeof(double) * n * n;
   tournament *t = (tournament*)malloc(size);
@@ -646,3 +650,4 @@ size_t condorcet_boundary_from(tournament *t, size_t n, size_t *items, size_t st
   return boundary;
 }
 
+}

@@ -2,6 +2,7 @@
 #include <assert.h>
 
 // Permutations of arrays of size_t
+namespace permutations{
 
 static inline void swap(size_t *x, size_t *y){
 	if(x == y) return;
@@ -85,3 +86,4 @@ void generate_shuffled_range(size_t length, size_t *data){
 	}
 }
 
+}

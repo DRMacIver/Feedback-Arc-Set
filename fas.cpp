@@ -4,6 +4,8 @@
 
 #include "fas_tournament.h"
 
+using namespace fas_tournament;
+
 int main(int argc, char **argv){
   srand(time(NULL) ^ getpid());
   FILE *argf = NULL;
