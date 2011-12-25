@@ -428,10 +428,6 @@ double *initial_scores(tournament *t){
     }
 
     memcpy(scores, working_buffer, sizeof(double) * t->size);
-    double tot = 0.0;
-    for(size_t i = 0; i < t->size; i++){
-      tot += scores[i];
-    }
   }
 
   free(working_buffer);
