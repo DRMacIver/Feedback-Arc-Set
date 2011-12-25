@@ -1,4 +1,4 @@
-C_FLAGS=-pedantic -Wall -Werror -g -Wno-write-strings
+C_FLAGS=-pedantic -Wall -Werror -g
 
 SOURCE=$(wildcard *.cpp )
 OBJ=$(SOURCE:.cpp=.o)

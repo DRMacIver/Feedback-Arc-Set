@@ -113,7 +113,7 @@ int read_line(size_t *buffer_size, char **buffer, FILE *f){
   return 1;
 }
 
-void fail(char *msg){
+void fail(const char *msg){
   fprintf(stderr, "%s\n", msg);
   exit(1);
 }
