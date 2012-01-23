@@ -15,6 +15,7 @@ namespace fas_tournament{
 
 using namespace permutations;
 
+
 tournament *new_tournament(int n){
   size_t size = sizeof(tournament) + sizeof(double) * n * n;
   tournament *t = (tournament*)malloc(size);
@@ -30,22 +31,10 @@ void del_tournament(tournament *t){
 
 #define CHECK_INDICES assert(i >= 0); assert(i < n); assert(j >= 0); assert(j < n);
 
-inline double tournament_get(tournament *t, size_t i, size_t j){
-  size_t n = t->size;
+double& tournament::val(size_t i, size_t j){
+  size_t n = this->size;
   CHECK_INDICES
-  return t->entries[n * i + j];
-}
-
-double tournament_set(tournament *t, size_t i, size_t j, double x){
-  size_t n = t->size;
-  CHECK_INDICES
-  return (t->entries[n * i + j] = x);
-}
-
-double tournament_add(tournament *t, size_t i, size_t j, double x){
-  size_t n = t->size;
-  CHECK_INDICES
-  return (t->entries[n * i + j] += x);
+  return this->entries[n * i + j];
 }
 
 void print_tournament(FILE *f, tournament *t){
@@ -54,7 +43,7 @@ void print_tournament(FILE *f, tournament *t){
   for(size_t i = 0; i < n; i++){
     for(size_t j = 0; j < n; j++){
       if(j > 0) fprintf(f, " ");
-      fprintf(f, "%.2f", tournament_get(t, i, j));
+      fprintf(f, "%.2f", t->val(i, j));
     }
     fprintf(f, "\n");
   }
@@ -159,7 +148,7 @@ tournament *read_tournament(FILE *f){
 
       if(i >= n || j >= n) fail("index out of bounds");
     
-      tournament_add(t, i, j, f);
+      t->val(i, j) += f;
     }
 
   } else {
@@ -179,7 +168,7 @@ tournament *read_tournament(FILE *f){
 
         if(rest == start) fail("Failed to read line");
 
-        tournament_set(t, i, j, f);
+        t->val(i, j) = f;
 
         j++;
         start = rest;
@@ -194,8 +183,8 @@ tournament *read_tournament(FILE *f){
 }
 
 int tournament_compare(tournament *t, size_t i, size_t j){
-	double x = tournament_get(t, i, j);
-	double y = tournament_get(t, j, i);
+	double x = t->val(i, j);
+	double y = t->val(j, i);
 
   if(x < y + ACCURACY && x > y - ACCURACY) return 0;
 
@@ -335,7 +324,7 @@ void multisort_by_score(tournament *t, double *scores, size_t n, size_t *items){
     double *new_scores = (double*)malloc(sizeof(double) * t->size);
 
     for(size_t i = 0; i < t->size; i++){
-      new_scores[i] = tournament_get(t, pivot, i);
+      new_scores[i] = t->val(pivot, i);
     }
 
     sort_by_score(n, new_scores, items);
@@ -375,8 +364,8 @@ int single_move_optimization(tournament *t, size_t n, size_t *items){
         size_t j = index_of_interest;
         do {
           j--;
-          score_delta += tournament_get(t, items[index_of_interest], items[j]);
-          score_delta -= tournament_get(t, items[j], items[index_of_interest]);
+          score_delta += t->val(items[index_of_interest], items[j]);
+          score_delta -= t->val(items[j], items[index_of_interest]);
 
           if(score_delta > 0){
             move_pointer_left(items+index_of_interest, index_of_interest - j);
@@ -387,8 +376,8 @@ int single_move_optimization(tournament *t, size_t n, size_t *items){
       }
 
       for(size_t j = index_of_interest + 1; j < n; j++){
-        score_delta += tournament_get(t, items[j], items[index_of_interest]);
-        score_delta -= tournament_get(t, items[index_of_interest], items[j]);
+        score_delta += t->val(items[j], items[index_of_interest]);
+        score_delta -= t->val(items[index_of_interest], items[j]);
 
         if(score_delta > 0){
           move_pointer_right(items+index_of_interest, j - index_of_interest);
@@ -419,11 +408,11 @@ double *initial_scores(tournament *t){
     for(size_t i = 0; i < t->size; i++){
       double total_score = t->size * SCORE_SMOOTHING;
       for(size_t j = 0; j < t->size; j++){
-        total_score += tournament_get(t, i, j);
+        total_score += t->val(i, j);
       }
 
       for(size_t j = 0; j < t->size; j++){
-        working_buffer[j] += scores[i] * (SCORE_SMOOTHING + tournament_get(t, i, j)) / total_score;
+        working_buffer[j] += scores[i] * (SCORE_SMOOTHING + t->val(i, j)) / total_score;
       }
     }
 
@@ -553,8 +542,8 @@ double best_score_lower_bound(tournament *t, size_t n, size_t *items){
 
   for(size_t i = 0; i < n; i++){
     for(size_t j = i+1; j < n; j++){
-      double aij = tournament_get(t, items[i], items[j]);
-      double aji = tournament_get(t, items[j], items[i]);
+      double aij = t->val(items[i], items[j]);
+      double aji = t->val(items[j], items[i]);
 
       tot += aij;
       tot += aji;

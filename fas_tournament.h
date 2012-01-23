@@ -6,6 +6,9 @@ namespace fas_tournament{
 typedef struct {
   size_t size;
   double entries[1];
+
+  public:
+    double& val(size_t i, size_t j);
 } tournament;
 
 tournament *new_tournament(int n);
