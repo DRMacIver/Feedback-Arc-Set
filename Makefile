@@ -1,4 +1,4 @@
-C_FLAGS=-pedantic -Wall -Werror -g
+C_FLAGS=-pedantic -Wall -Werror -g --std=c++0x
 
 SOURCE=$(wildcard *.cpp )
 OBJ=$(SOURCE:.cpp=.o)
@@ -10,10 +10,10 @@ clean:
 	rm -f fas
 
 %.o: %.cpp
-	gcc -c $(C_FLAGS) $< -o $@
+	g++ -c $(C_FLAGS) $< -o $@
 
 test: fas
 	ruby tests.rb
 
 fas: $(OBJ)
-	gcc -g -o fas permutations.o fas_tournament.o fas.o -lm
+	g++ -g -o fas permutations.o fas_tournament.o fas.o -lm
