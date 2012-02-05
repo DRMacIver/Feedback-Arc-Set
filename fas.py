@@ -16,18 +16,7 @@ def score(weights, elems):
 def optimise(weights, elems = None):
   if not elems:
     elems = xrange(weights.size)
-
-
-  @total_ordering
-  class WeightKey(object):
-    def __init__(self, value):
-      self.value = value
-    def __gt__(self, other):
-      return weights.get(self.value, other.value) < weights.get(other.value, self.value)
-    def __eq__(self, other):
-      return self.value == other.value
-  
-  return sorted(elems, key = WeightKey)
+  return ranked_pairs(weights, elems)
     
 def lower_bound(weights, elems = None):
   if not elems: elems = range(weights.size)
