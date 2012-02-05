@@ -44,19 +44,7 @@ double tournament_add(tournament *t, size_t i, size_t j, double x){
   return (t->entries[n * i + j] += x);
 }
 
-void print_tournament(FILE *f, tournament *t){
-  size_t n = t-> size;
-
-  for(int i = 0; i < n; i++){
-    for(int j = 0; j < n; j++){
-      if(j > 0) fprintf(f, " ");
-      fprintf(f, "%.2f", tournament_get(t, i, j));
-    }
-    fprintf(f, "\n");
-  }
-}
-
-size_t count_tokens(char *c){
+static size_t count_tokens(char *c){
   if(*c == '\0') return 0;
 
   size_t count = 0;
@@ -77,7 +65,7 @@ size_t count_tokens(char *c){
   return count;
 }
 
-int read_line(size_t *buffer_size, char **buffer, FILE *f){
+static int read_line(size_t *buffer_size, char **buffer, FILE *f){
   if(!*buffer) *buffer = malloc(*buffer_size);
 
   size_t written = 0;
@@ -109,7 +97,7 @@ int read_line(size_t *buffer_size, char **buffer, FILE *f){
   return 1;
 }
 
-void fail(char *msg){
+static void fail(char *msg){
   fprintf(stderr, "%s\n", msg);
   exit(1);
 }
@@ -189,7 +177,7 @@ tournament *read_tournament(FILE *f){
   return t;
 }
 
-int tournament_compare(tournament *t, size_t i, size_t j){
+static int tournament_compare(tournament *t, size_t i, size_t j){
 	double x = tournament_get(t, i, j);
 	double y = tournament_get(t, j, i);
 
@@ -214,12 +202,6 @@ double score_fas_tournament(tournament *t, size_t count, size_t *data){
 	return score;
 }
 
-// IMPORTANT: Returns an INDEX not an ELEMENT
-size_t pick_a_pivot(tournament *t, size_t count, size_t *items){
-	return count / 2;
-}
-
-
 static inline void swap(size_t *x, size_t *y){
 	if(x == y) return;
 	size_t z = *x;
@@ -227,7 +209,7 @@ static inline void swap(size_t *x, size_t *y){
 	*y = z;
 }
 
-void sort(size_t n, size_t *values){
+static void sort(size_t n, size_t *values){
   for(size_t i = 1; i < n; i++){
     size_t k = i;
     while(k > 0 && values[k] < values[k - 1]){
@@ -237,7 +219,7 @@ void sort(size_t n, size_t *values){
   }
 }
 
-int brute_force_optimise(tournament *t, size_t n, size_t *items){
+static int brute_force_optimise(tournament *t, size_t n, size_t *items){
 	if(n <= 1) return 0;
 	if(n == 2){
 		int c = tournament_compare(t, items[0], items[1]);
@@ -268,7 +250,7 @@ int brute_force_optimise(tournament *t, size_t n, size_t *items){
 	return changed;
 }
 
-int window_optimise(tournament *t, size_t n, size_t *items, size_t window){
+static int window_optimise(tournament *t, size_t n, size_t *items, size_t window){
   if(n <= window){
     return brute_force_optimise(t, n, items);
   }
@@ -292,25 +274,8 @@ int window_optimise(tournament *t, size_t n, size_t *items, size_t window){
   return changed_at_all;
 }
 
-int local_sort(tournament *t, size_t n, size_t *items){
-  int changed = 0;
-  for(size_t i = 1; i < n; i++){
-    for(size_t k = i; k > 0; k--){
-      int c = tournament_compare(t, items[k-1], items[k]);
-      if(c <= 0) break;
-      changed = 1;
-      swap(items + k - 1, items + k);
-    }  
-  }
-  return changed;
-}
-
-int double_compare(double x, double y){
-  return (x > y) - (y > x);
-}
-
 // Insertion sort for now. Everything else is O(n^2) anyway
-void sort_by_score(size_t n, double *scores, size_t *values){
+static void sort_by_score(size_t n, double *scores, size_t *values){
   for(size_t i = 1; i < n; i++){
     size_t k = i;
     while(k > 0 && scores[values[k]] < scores[values[k - 1]]){
@@ -320,7 +285,7 @@ void sort_by_score(size_t n, double *scores, size_t *values){
   }
 }
 
-void multisort_by_score(tournament *t, double *scores, size_t n, size_t *items){
+static void multisort_by_score(tournament *t, double *scores, size_t n, size_t *items){
   sort_by_score(n, scores, items);
 
   if(n <= JUST_BRUTE_FORCE_IT) brute_force_optimise(t, n, items);
@@ -341,7 +306,7 @@ void multisort_by_score(tournament *t, double *scores, size_t n, size_t *items){
   }
 }
 
-void move_pointer_right(size_t *x, size_t offset){
+static void move_pointer_right(size_t *x, size_t offset){
   while(offset){
     size_t *next = x + 1;
     swap(x, next);
@@ -350,7 +315,7 @@ void move_pointer_right(size_t *x, size_t offset){
   }
 }
 
-void move_pointer_left(size_t *x, size_t offset){
+static void move_pointer_left(size_t *x, size_t offset){
   while(offset){
     size_t *next = x - 1;
     swap(x, next);
@@ -359,7 +324,7 @@ void move_pointer_left(size_t *x, size_t offset){
   }
 }
 
-int single_move_optimization(tournament *t, size_t n, size_t *items){
+static int single_move_optimization(tournament *t, size_t n, size_t *items){
   int changed = 1;
   int changed_at_all = 0;
   while(changed){
@@ -399,7 +364,7 @@ int single_move_optimization(tournament *t, size_t n, size_t *items){
 }
 
 #define SCORE_SMOOTHING 0.1
-double *initial_scores(tournament *t){
+static double *initial_scores(tournament *t){
   double *scores = malloc(sizeof(double) * t->size);
   double *working_buffer = malloc(sizeof(double) * t->size);
 
@@ -434,51 +399,8 @@ double *initial_scores(tournament *t){
   return scores;
 }
 
-void shuffle_optimisation(tournament *t, size_t n, size_t *items){
-  size_t *working_buffer = malloc(sizeof(size_t) * n);
-
-  memcpy(working_buffer, items, sizeof(size_t) * n);
-
-  double best_score = score_fas_tournament(t, n, items);
-
-  size_t failure_count = 0;
-
-  for(size_t i = 0; i < 1000; i++){
-    shuffle(n, working_buffer);
-    window_optimise(t, n, working_buffer, 5);
-    single_move_optimization(t, n, working_buffer);
-    double score = score_fas_tournament(t, n, working_buffer);
-
-    if(score > best_score){
-      failure_count = 0;
-      memcpy(items, working_buffer, sizeof(size_t) * n);
-      best_score = score;
-    } else {
-      failure_count++;
-      if(failure_count > 50) break;
-    }
-  }
-
-  free(working_buffer);
-}
-
-void optimise_pretty_thoroughly(tournament *t, size_t n, size_t *items){
-  if(n <= 10){
-    brute_force_optimise(t, n, items);
-  } else {
-    shuffle_optimisation(t, n, items);
-    for(size_t i = 0; i < 1000; i++){
-      if(!(window_optimise(t, n, items, 9) || single_move_optimization(t, n, items))) break;
-    }
-
-    size_t split = n / 2;
-    optimise_pretty_thoroughly(t, split, items);
-    optimise_pretty_thoroughly(t, n - split, items + split);
-  }
-}
-
 #define CHUNK_SIZE 8
-void optimise_subranges_thoroughly(tournament *t, size_t n, size_t *items){
+static void optimise_subranges_thoroughly(tournament *t, size_t n, size_t *items){
   for(size_t i = 0; i < n; i += CHUNK_SIZE){
     size_t length = CHUNK_SIZE;
     if(i + length > n) length = n - i;
@@ -486,7 +408,7 @@ void optimise_subranges_thoroughly(tournament *t, size_t n, size_t *items){
   }
 }
 
-void rotate_array(size_t n, size_t *items, size_t k){
+static void rotate_array(size_t n, size_t *items, size_t k){
   if(!k) return;
 
   k = k % n;
@@ -499,7 +421,7 @@ void rotate_array(size_t n, size_t *items, size_t k){
   }
 }
 
-size_t find_best_cycle(tournament *t, size_t n, size_t *items){
+static size_t find_best_cycle(tournament *t, size_t n, size_t *items){
   double best_score = score_fas_tournament(t, n, items);
   size_t best_index = 0;
 
@@ -520,7 +442,7 @@ size_t find_best_cycle(tournament *t, size_t n, size_t *items){
   return best_index;
 }
 
-int cycle_all_subranges(tournament *t, size_t n, size_t *items, size_t max_length){
+static int cycle_all_subranges(tournament *t, size_t n, size_t *items, size_t max_length){
   int changed = 0;
 
   for(size_t length = 2; length < max_length; length++){
@@ -539,7 +461,7 @@ size_t *integer_range(size_t n){
   return results;
 }
 
-void heavy_duty_smoothing(tournament *t, size_t n, size_t *items){
+static void heavy_duty_smoothing(tournament *t, size_t n, size_t *items){
   optimise_subranges_thoroughly(t, n, items);
   while(window_optimise(t, n, items, 5) || single_move_optimization(t, n, items)); 
   window_optimise(t, n, items, 8); 
@@ -566,7 +488,7 @@ double best_score_lower_bound(tournament *t, size_t n, size_t *items){
   return 0.5 * tot + 0.5 * sqrt(vtot);
 }
 
-int shuffle_to_optimality(tournament *t, size_t n, size_t *items){
+static int shuffle_to_optimality(tournament *t, size_t n, size_t *items){
   if(n <= JUST_BRUTE_FORCE_IT){
     return brute_force_optimise(t, n, items);
   }  
@@ -577,29 +499,6 @@ int shuffle_to_optimality(tournament *t, size_t n, size_t *items){
     shuffle(n, items);
   }
   return changed;
-}
-
-void shuffle_subranges_to_optimality(tournament *t, size_t n, size_t *items){
-  if(n <= JUST_BRUTE_FORCE_IT){
-    brute_force_optimise(t, n, items);
-    return;
-  }  
-
-  size_t max_failures = 100;
-
-  size_t failure_count = 0;
-
-  while(failure_count < max_failures){
-    size_t i = random_number(n);
-    size_t j = random_number(n);
-
-    if(i == j) continue;
-    if(i > j) swap(&i, &j);
-    
-    if(shuffle_to_optimality(t, j - i, items + i)) failure_count = 0;
-    else failure_count++;
-  }
-
 }
 
 size_t *optimal_ordering(tournament *t){
