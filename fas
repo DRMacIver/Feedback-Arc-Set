@@ -10,8 +10,8 @@ else:
 
 mx = matrix.parse(f)
 
-order, score = fas.optimise(mx)
+order = fas.optimise(mx)
 
-print "Score: %f" % score
+print "Score: %f" % fas.score(mx, order)
 print "Lower bound on best score: %f" % fas.lower_bound(mx)
 print "Optimal ordering: %s" % ' '.join([str(i) for i in order])
