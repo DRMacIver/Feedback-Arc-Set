@@ -1,5 +1,6 @@
 #include "fas_tournament.h"
 #include "permutations.h"
+#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include <ctype.h>
@@ -34,26 +35,33 @@ void del_tournament(tournament *t){
 
 
 inline double tournament_get(tournament *t, size_t i, size_t j){
-  size_t n = t->size;
-  assert(i >= 0); 
-  assert(i < n); 
-  assert(j >= 0); 
-  assert(j < n);
-  return t->entries[n * i + j];
+  fas_entry *lb = t->entries;
+  fas_entry *ub = t->entries + t->entry_count - 1;
+
+  while(ub - lb > 8){
+    fas_entry *mid = lb + (ub - lb)/2;
+
+    if(mid->row < i || (mid->row == i && mid->column < j)) lb = mid;
+    else ub = mid;
+  }
+
+  while(lb <= ub){
+    if(lb->row == i && lb->column == j) return lb->value;
+    lb++;
+  }
+  return 0.0;
 }
 
 double score_fas_tournament(tournament *t, size_t count, size_t *data){
-	double score = 0.0;
+  double score = 0.0;
 
-	for(size_t i = 0; i < count; i++){
-    double *score_array = t->entries + data[i] * t->size;
+  for(size_t i = 0; i < count; i++){
+    for(size_t j = i+1; j < count; j++){
+      score += tournament_get(t, data[i], data[j]);
+    }
+  }
 
-		for(size_t j = i + 1; j < count; j++){
-			score += score_array[data[j]];
-		}
-	}
-
-	return score;
+  return score;
 }
 
 
@@ -115,10 +123,19 @@ static void fail(char *msg){
   exit(1);
 }
 
+int compare_fas_entry(const void *xx, const void *yy){
+  fas_entry *x = (fas_entry*)xx;
+  fas_entry *y = (fas_entry*)yy;
+
+  if(x->row < y->row) return -1;
+  if(x->column < y->column) return -1;
+  if(x->row == y->row && x->column == y->column) return 0;
+  return 1;
+}
+
 tournament *read_tournament(FILE *f){
   size_t length = 1024;
   char *line = NULL;
-  tournament *t;
 
   if(!read_line(&length, &line, f)){
     fail("No data for read_tournament");
@@ -132,15 +149,30 @@ tournament *read_tournament(FILE *f){
 
   n = strtoul(line, &rest, 0);
 
+  if(n == 0) fail("0 is not a valid matrix size");
+
+  size_t entry_count = 0;
+  // Fairly arbitrary. We guess there are about 2 entries per item and grow rapidly if we run out
+  size_t entry_capacity = 2 * n;
+
+  tournament *pre_tournament = malloc(sizeof(tournament) + sizeof(fas_entry) * entry_capacity);
+  pre_tournament->size = n;
+  fas_entry *entry_buffer = pre_tournament->entries;
+
+
   if(line == rest){
     fail("I didn't understand the starting line");
   } else if (n <= 0){
     fail("Empty tournament");
   }
 
-  t = new_tournament(n);
-
   while(read_line(&length, &line, f)){
+    if(entry_count == entry_capacity){
+      entry_capacity *= 2;
+      pre_tournament = realloc(pre_tournament, sizeof(tournament) + sizeof(fas_entry) * entry_capacity);
+      entry_buffer = pre_tournament->entries;
+    }
+
     char *check = line;
     size_t i = strtoul(line, &rest, 0);
     if(rest == check) fail("failed to parse line"); 
@@ -153,10 +185,27 @@ tournament *read_tournament(FILE *f){
 
     if(i >= n || j >= n) fail("index out of bounds");
 
-    t->entries[n * i + j] += f;
+    fas_entry *this_entry = entry_buffer + entry_count;
+    this_entry->row = i;
+    this_entry->column = j;
+    this_entry->value = f;
+
+    entry_count++;
   }
+  
+  qsort(entry_buffer, entry_count, sizeof(fas_entry), compare_fas_entry);
+
+  for(size_t i = 1; i < entry_count; i++){
+    if(entry_buffer[i].row == entry_buffer[i-1].row && entry_buffer[i].column == entry_buffer[i-1].column) fail("Duplicate entry\n");
+  }
+
+  pre_tournament->entry_count = entry_count;
+  pre_tournament = realloc(pre_tournament, sizeof(tournament) + sizeof(fas_entry) * entry_count);
+
+  FASDEBUG("Read %lux%lu tournament with %lu entries\n", pre_tournament->size, pre_tournament->size, pre_tournament->entry_count);
+
   free(line);
-  return t;
+  return pre_tournament;
 }
 
 static int tournament_compare(tournament *t, size_t i, size_t j){

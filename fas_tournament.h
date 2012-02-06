@@ -2,8 +2,15 @@
 #include <stdio.h>
 
 typedef struct {
+  size_t row;
+  size_t column;
+  double value;
+} fas_entry;
+
+typedef struct {
   size_t size;
-  double entries[];
+  size_t entry_count;
+  fas_entry entries[];
 } tournament;
 
 void enable_fas_tournament_debug(int x);
