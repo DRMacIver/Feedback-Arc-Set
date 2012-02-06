@@ -242,37 +242,38 @@ static int window_optimise(tournament *t, size_t n, size_t *items, size_t window
   return changed_at_all;
 }
 
-// Insertion sort for now. Everything else is O(n^2) anyway
-static void sort_by_score(size_t n, double *scores, size_t *values){
-  for(size_t i = 1; i < n; i++){
-    size_t k = i;
-    while(k > 0 && scores[values[k]] < scores[values[k - 1]]){
-      swap(values + k, values + k - 1);
-      k--;
-    }
-  }
+
+typedef struct {
+  size_t index;
+  double score;
+} index_with_score;
+
+int compare_index_with_score(const void *xx, const void *yy){
+  index_with_score *x = (index_with_score*)xx;
+  index_with_score *y = (index_with_score*)yy;
+
+  if(x->score < y->score) return -1;
+  if(x->score > y->score) return 1;
+  return 0;
 }
 
-static void multisort_by_score(tournament *t, double *scores, size_t n, size_t *items){
-  sort_by_score(n, scores, items);
+// Insertion sort for now. Everything else is O(n^2) anyway
+static void sort_by_score(size_t n, double *scores, size_t *values){
+  index_with_score *buffer = malloc(n * sizeof(index_with_score));
 
-  if(n <= JUST_BRUTE_FORCE_IT) brute_force_optimise(t, n, items);
-  else {
-    size_t k = n/2;
-    size_t pivot = items[k];
-
-    double *new_scores = malloc(sizeof(double) * t->size);
-
-    for(size_t i = 0; i < t->size; i++){
-      new_scores[i] = tournament_get(t, pivot, i);
-    }
-
-    sort_by_score(n, new_scores, items);
-    free(new_scores);
-
-    multisort_by_score(t, scores, k, items);
-    multisort_by_score(t, scores, n - k, items + k);
+  for(size_t i = 0; i < n; i++){
+    index_with_score *ix = buffer + i;
+    ix->index = values[i];
+    ix->score = scores[i];
   }
+
+  qsort(buffer, n, sizeof(index_with_score), compare_index_with_score);
+
+  for(size_t i = 0; i < n; i++){
+    values[i] = buffer[i].index; 
+  }
+
+  free(buffer);
 }
 
 static void move_pointer_right(size_t *x, size_t offset){
@@ -433,10 +434,10 @@ size_t *optimal_ordering(tournament *t){
 	size_t *results = integer_range(n);
   FASDEBUG("Scoring\n");
   double *scores = initial_scores(t);
+  FASDEBUG("Sorting\n");
+  sort_by_score(n, scores, results);
   FASDEBUG("Shuffling\n");
   shuffle_to_optimality(t, n, results);
-  FASDEBUG("Sorting\n");
-  multisort_by_score(t, scores, n, results);
   FASDEBUG("Smoothing\n");
   heavy_duty_smoothing(t, n, results);
   free(scores);
