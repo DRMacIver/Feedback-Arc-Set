@@ -15,7 +15,7 @@ end
 BASE = File.dirname(__FILE__)
 FAS = File.join(BASE, "fas")
 
-TEST_CASES = ARGV.length > 0 ? ARGV : Dir["#{BASE}/testcases/*.data"]
+TEST_CASES = (ARGV.length > 0 ? ARGV : Dir["#{BASE}/testcases/*.data"]).select{|x| x =~ /\.data$/ }
 
 FAILURE = "FAILURE".colored.red
 SUCCESS = "SUCCESS".colored.green
@@ -41,6 +41,10 @@ def fas(file)
 end
 
 TEST_CASES.sort!
+
+quality_failures = []
+runtime_failures = []
+correctness_failures = []
 
 failed = false
 TEST_CASES.each do |test|
@@ -73,12 +77,12 @@ TEST_CASES.each do |test|
 
   valgrind_failed = ft[:valgrind_failed] 
 
-  correctness_error = valgrind_failed || ordering_error
+  correctness_failed = valgrind_failed || ordering_error
 
   if ft[:score] > best_score
     best_score = ft[:score]
     best_run = ft[:ordering]
-    File.open(score_file, "w"){|o| o.puts(JSON.pretty_generate({:score => best_score, :ordering => best_run})) } unless correctness_error
+    File.open(score_file, "w"){|o| o.puts(JSON.pretty_generate({:score => best_score, :ordering => best_run})) } unless correctness_failed
   end
   
   quality_lost = (1 - score / best_score) * 100
@@ -90,12 +94,31 @@ TEST_CASES.each do |test|
   failed ||= quality_failed
   failed ||= runtime_failed
 
-  puts File.basename(test).gsub(/.data$/, "")
+  test_name = File.basename(test).gsub(/.data$/, "")
+
+  correctness_failures << test_name if correctness_failed
+  quality_failures << test_name if quality_failed
+  runtime_failures << test_name if runtime_failed
+
+  puts test_name
   puts "  Valgrind:      #{valgrind_failed ? FAILURE : SUCCESS}" if OPTS[:"valgrind"]
   puts "  Loss:     #{"%.2f" % quality_lost} #{quality_failed ? FAILURE : SUCCESS}"
   puts "  Runtime:  #{"%.2f" % ft[:runtime]} #{runtime_failed ? FAILURE : SUCCESS}"
-  puts "  Correctness:  #{ordering_error} #{ordering_error ? FAILURE : SUCCESS}"
+  puts "  Correctness:  #{correctness_failed} #{correctness_failed ? FAILURE : SUCCESS}"
   puts
 end
 
-exit 1 if failed
+def report_failures(name, failures)
+  return if failures.empty?
+
+  puts "  #{name}: #{failures.join(", ")}"
+end
+
+if failed
+  puts "Failures:" 
+
+  report_failures("Correctness", correctness_failures);
+  report_failures("Performance", runtime_failures);
+  report_failures("Quality", quality_failures);
+  exit 1
+end
