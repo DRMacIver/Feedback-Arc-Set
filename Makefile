@@ -6,7 +6,7 @@ OBJ=$(SOURCE:.c=.o)
 all: $(OBJ)
 
 clean: 
-	rm -rf $(OBJ)
+	rm -rf *.o
 	rm -f fas
 
 %.o: %.c
