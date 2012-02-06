@@ -309,6 +309,7 @@ static void multisort_by_score(tournament *t, double *scores, size_t n, size_t *
     }
 
     sort_by_score(n, new_scores, items);
+    free(new_scores);
 
     multisort_by_score(t, scores, k, items);
     multisort_by_score(t, scores, n - k, items + k);
