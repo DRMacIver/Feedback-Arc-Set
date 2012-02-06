@@ -11,8 +11,6 @@ void enable_fas_tournament_debug(int x);
 tournament *new_tournament(int n);
 void del_tournament(tournament *t);
 double tournament_get(tournament *t, size_t i, size_t j);
-double tournament_set(tournament *t, size_t i, size_t j, double x);
-double tournament_add(tournament *t, size_t i, size_t j, double x);
 
 tournament *read_tournament(FILE *f);
 

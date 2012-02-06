@@ -33,25 +33,30 @@ void del_tournament(tournament *t){
 }
 
 
-#define CHECK_INDICES assert(i >= 0); assert(i < n); assert(j >= 0); assert(j < n);
-
 inline double tournament_get(tournament *t, size_t i, size_t j){
   size_t n = t->size;
   CHECK_INDICES
+  assert(i >= 0); 
+  assert(i < n); 
+  assert(j >= 0); 
+  assert(j < n);
   return t->entries[n * i + j];
 }
 
-double tournament_set(tournament *t, size_t i, size_t j, double x){
-  size_t n = t->size;
-  CHECK_INDICES
-  return (t->entries[n * i + j] = x);
+double score_fas_tournament(tournament *t, size_t count, size_t *data){
+	double score = 0.0;
+
+	for(size_t i = 0; i < count; i++){
+    double *score_array = t->entries + data[i] * t->size;
+
+		for(size_t j = i + 1; j < count; j++){
+			score += score_array[data[j]];
+		}
+	}
+
+	return score;
 }
 
-double tournament_add(tournament *t, size_t i, size_t j, double x){
-  size_t n = t->size;
-  CHECK_INDICES
-  return (t->entries[n * i + j] += x);
-}
 
 static size_t count_tokens(char *c){
   if(*c == '\0') return 0;
@@ -148,8 +153,8 @@ tournament *read_tournament(FILE *f){
     if(rest == check) fail("failed to parse line"); 
 
     if(i >= n || j >= n) fail("index out of bounds");
-  
-    tournament_add(t, i, j, f);
+
+    t->entries[n * i + j] += f;
   }
   free(line);
   return t;
@@ -164,20 +169,6 @@ static int tournament_compare(tournament *t, size_t i, size_t j){
 	if(x >= y) return -1;
 	if(y >= x) return +1;
 	return 0;
-}
-
-double score_fas_tournament(tournament *t, size_t count, size_t *data){
-	double score = 0.0;
-
-	for(size_t i = 0; i < count; i++){
-    double *score_array = t->entries + data[i] * t->size;
-
-		for(size_t j = i + 1; j < count; j++){
-			score += score_array[data[j]];
-		}
-	}
-
-	return score;
 }
 
 static inline void swap(size_t *x, size_t *y){
