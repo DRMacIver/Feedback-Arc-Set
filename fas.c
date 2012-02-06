@@ -32,7 +32,6 @@ int main(int argc, char **argv){
   size_t *items = optimal_ordering(t);
 
 	printf("Score: %f\n", score_fas_tournament(t, n, items));
-	printf("Lower bound on best score: %f\n", best_score_lower_bound(t, n, items));
 	printf("Optimal ordering:");
 
   size_t i = 0;

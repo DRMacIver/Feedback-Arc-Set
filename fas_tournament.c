@@ -375,25 +375,6 @@ size_t *integer_range(size_t n){
   return results;
 }
 
-double best_score_lower_bound(tournament *t, size_t n, size_t *items){
-  double tot = 0.0;
-  double vtot = 0.0;
-
-  for(size_t i = 0; i < n; i++){
-    for(size_t j = i+1; j < n; j++){
-      double aij = tournament_get(t, items[i], items[j]);
-      double aji = tournament_get(t, items[j], items[i]);
-
-      tot += aij;
-      tot += aji;
-
-      vtot += (aij - aji) * (aij - aji);
-    }
-  }
-
-  return 0.5 * tot + 0.5 * sqrt(vtot);
-}
-
 void force_connectivity(tournament *t, size_t n, size_t *items){
   if(!n) return;
   for(size_t i = 0; i < n - 1; i++){
