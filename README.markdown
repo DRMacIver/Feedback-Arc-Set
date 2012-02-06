@@ -28,4 +28,23 @@ Downsides:
 
 All that being said, it appears to work and work reasonably well.
 
-Note that the test suite is currently failing. This shouldn't be taken to be a bug - the quality and performance numbers in the set suite are more aspirational than currently achieved. 
+# Input format
+
+The input to the solver is a sparse matrix format. It takes the form
+
+n
+i1 j1 x1
+i2 j2 x2
+...
+
+where n is the number of dimensions and the i, j, x are triples with i, j integers with 0 <= i, j < n and x a float with x >= 0. This is interpreted as an nxn matrix with Aij = x. 
+
+The error messages on parsing failure are currently not very good. Sorry. I'll fix that at some point.
+
+# Output format
+The output is to stdout and looks like the following:
+
+Score: 12.845055
+Optimal ordering: 11 1 2 [7 3] 8 || [14 9 12] [10 13] [5 0] 4 6
+
+The || indicates the presence of a condorcet partition at that point. A bracketed set of indices such as [7 3] indicates a tie where the order of the elements in the brackets does not matter. 
