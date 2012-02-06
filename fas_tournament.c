@@ -408,51 +408,6 @@ static void optimise_subranges_thoroughly(tournament *t, size_t n, size_t *items
   }
 }
 
-static void rotate_array(size_t n, size_t *items, size_t k){
-  if(!k) return;
-
-  k = k % n;
-  for(size_t i = 0; i < k; i++){
-    size_t new_start = items[n - 1];
-    for(size_t j = n - 1; j > 0; j--){
-      items[j] = items[j-1];
-    }
-    items[0] = new_start;
-  }
-}
-
-static size_t find_best_cycle(tournament *t, size_t n, size_t *items){
-  double best_score = score_fas_tournament(t, n, items);
-  size_t best_index = 0;
-
-  for(size_t k = 1; k < n; k++){
-    rotate_array(n, items, 1);
-    double score =  score_fas_tournament(t, n, items);
-
-    if(score > best_score){
-      best_score = score;
-      best_index = k;
-    }
-  }
-  rotate_array(n, items, 1);
-  if(!best_index) return 0;
-
-  rotate_array(n, items, best_index);
-
-  return best_index;
-}
-
-static int cycle_all_subranges(tournament *t, size_t n, size_t *items, size_t max_length){
-  int changed = 0;
-
-  for(size_t length = 2; length < max_length; length++){
-    for(size_t start = 0; start + length < n; start++){
-      changed |= find_best_cycle(t, length, items+start);
-    }
-  }
-  return changed;
-}
-
 size_t *integer_range(size_t n){
   size_t *results = malloc(sizeof(size_t) * n);
 	for(size_t i = 0; i < n; i++){
@@ -463,10 +418,9 @@ size_t *integer_range(size_t n){
 
 static void heavy_duty_smoothing(tournament *t, size_t n, size_t *items){
   optimise_subranges_thoroughly(t, n, items);
-  while(window_optimise(t, n, items, 5) || single_move_optimization(t, n, items)); 
-  window_optimise(t, n, items, 8); 
+  window_optimise(t, n, items, 5);
+  window_optimise(t, n, items, 7); 
   single_move_optimization(t, n, items);
-  while(cycle_all_subranges(t, n, items, 25) || single_move_optimization(t, n, items));
 }
 
 double best_score_lower_bound(tournament *t, size_t n, size_t *items){
