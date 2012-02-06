@@ -123,8 +123,12 @@ def avg(ls)
   ls.inject(0.0){|x, y| x + y } / ls.length
 end
 
-puts "Average runtime: #{"%.2f" % avg(runtimes)}"
-puts "Average loss: #{"%.2f" % avg(losses)}"
+puts "Runtime:"
+puts "  average: #{"%.2f" % avg(runtimes)}"
+puts "  max : #{"%.2f" % runtimes.max}"
+puts "Loss:"
+puts "  average: #{"%.2f" % avg(losses)}"
+puts "  max : #{"%.2f" % losses.max}"
 
 if failed
   puts "Failures:" 
