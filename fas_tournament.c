@@ -128,7 +128,7 @@ int compare_fas_entry(const void *xx, const void *yy){
   fas_entry *y = (fas_entry*)yy;
 
   if(x->row < y->row) return -1;
-  if(x->column < y->column) return -1;
+  if(x->row == y->row && x->column < y->column) return -1;
   if(x->row == y->row && x->column == y->column) return 0;
   return 1;
 }
