@@ -21,7 +21,7 @@ Features:
   
 Downsides:
 
-* There are no good bounds on how bad the error can be. Even that within 1% claim might be wildly wrong - I don't have optimal orders for many test cases, only best I've been able to find so far.
+* The theoretical bounds on how bad the error can be are extremely weak to non-existent
 * The performance is O(n^2) in the number of items. 
 * The API for the library is extremely poorly thought out at present.
 * The command line interface is terribly rudimentary
