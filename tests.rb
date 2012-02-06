@@ -87,7 +87,7 @@ TEST_CASES.each do |test|
   
   quality_lost = (1 - score / best_score) * 100
 
-  quality_failed = quality_lost > 1
+  quality_failed = quality_lost > 5
   runtime_failed = ft[:runtime] > 60
 
   failed ||= valgrind_failed
