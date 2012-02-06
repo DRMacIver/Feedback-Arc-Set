@@ -403,6 +403,27 @@ double best_score_lower_bound(tournament *t, size_t n, size_t *items){
   return 0.5 * tot + 0.5 * sqrt(vtot);
 }
 
+void force_connectivity(tournament *t, size_t n, size_t *items){
+  if(!n) return;
+  for(size_t i = 0; i < n - 1; i++){
+    size_t j = i + 1;
+    while(j < n && !tournament_compare(t, items[i], items[j])) j++;
+    if(j < n) move_pointer_left(items + j, (j - i - 1));
+  }
+}
+
+
+void local_sort(tournament *t, size_t n, size_t *items){
+  for(size_t i = 1; i < n; i++){
+    size_t j = i;
+
+    while(j > 0 && tournament_compare(t, items[j], items[j - 1]) <= 0){
+      swap(items + j, items + j - 1);
+      j--;
+    }
+  }
+}
+
 size_t *optimal_ordering(tournament *t){
   size_t n = t->size;
 	size_t *results = integer_range(n);
@@ -411,6 +432,8 @@ size_t *optimal_ordering(tournament *t){
   FASDEBUG("Sorting\n");
   sort_by_score(n, scores, results);
   free(scores);
+  force_connectivity(t, n, results);
+  local_sort(t, n, results);
   FASDEBUG("Smoothing\n");
   FASDEBUG("  optimise_subranges_thoroughly\n");
   optimise_subranges_thoroughly(t, n, results);
@@ -419,6 +442,7 @@ size_t *optimal_ordering(tournament *t){
   FASDEBUG("  window_optimise(7)\n");
   window_optimise(t, n, results, 7); 
   FASDEBUG("  single_move_optimization\n");
+  local_sort(t, n, results);
   single_move_optimization(t, n, results);
   return results;
 }
