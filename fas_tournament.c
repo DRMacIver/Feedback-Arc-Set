@@ -416,19 +416,6 @@ double best_score_lower_bound(tournament *t, size_t n, size_t *items){
   return 0.5 * tot + 0.5 * sqrt(vtot);
 }
 
-static int shuffle_to_optimality(tournament *t, size_t n, size_t *items){
-  if(n <= JUST_BRUTE_FORCE_IT){
-    return brute_force_optimise(t, n, items);
-  }  
-
-  int changed = 0;
-  while(score_fas_tournament(t, n, items) < best_score_lower_bound(t, n, items)){
-    changed = 1;
-    shuffle(n, items);
-  }
-  return changed;
-}
-
 size_t *optimal_ordering(tournament *t){
   size_t n = t->size;
 	size_t *results = integer_range(n);
@@ -436,8 +423,6 @@ size_t *optimal_ordering(tournament *t){
   double *scores = initial_scores(t);
   FASDEBUG("Sorting\n");
   sort_by_score(n, scores, results);
-  FASDEBUG("Shuffling\n");
-  shuffle_to_optimality(t, n, results);
   FASDEBUG("Smoothing\n");
   heavy_duty_smoothing(t, n, results);
   free(scores);
