@@ -6,6 +6,8 @@ typedef struct {
   double entries[];
 } tournament;
 
+void enable_fas_tournament_debug(int x);
+
 tournament *new_tournament(int n);
 void del_tournament(tournament *t);
 double tournament_get(tournament *t, size_t i, size_t j);

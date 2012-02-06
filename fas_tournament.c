@@ -11,6 +11,15 @@
 #define MAX_MISSES 5
 #define MIN_IMPROVEMENT 0.00001
 
+#define FASDEBUG(...) if(_enable_fas_tournament_debug) fprintf(stderr, __VA_ARGS__);
+
+int _enable_fas_tournament_debug = 0;
+
+void enable_fas_tournament_debug(int x){
+  _enable_fas_tournament_debug = x;
+  FASDEBUG("Debugging on\n");
+}
+
 tournament *new_tournament(int n){
   size_t size = sizeof(tournament) + sizeof(double) * n * n;
   tournament *t = malloc(size);
@@ -417,9 +426,13 @@ size_t *integer_range(size_t n){
 }
 
 static void heavy_duty_smoothing(tournament *t, size_t n, size_t *items){
+  FASDEBUG("  optimise_subranges_thoroughly\n");
   optimise_subranges_thoroughly(t, n, items);
+  FASDEBUG("  window_optimise(5)\n");
   window_optimise(t, n, items, 5);
+  FASDEBUG("  window_optimise(7)\n");
   window_optimise(t, n, items, 7); 
+  FASDEBUG("  single_move_optimization\n");
   single_move_optimization(t, n, items);
 }
 
@@ -458,9 +471,13 @@ static int shuffle_to_optimality(tournament *t, size_t n, size_t *items){
 size_t *optimal_ordering(tournament *t){
   size_t n = t->size;
 	size_t *results = integer_range(n);
+  FASDEBUG("Scoring\n");
   double *scores = initial_scores(t);
+  FASDEBUG("Shuffling\n");
   shuffle_to_optimality(t, n, results);
+  FASDEBUG("Sorting\n");
   multisort_by_score(t, scores, n, results);
+  FASDEBUG("Smoothing\n");
   heavy_duty_smoothing(t, n, results);
   free(scores);
   return results;

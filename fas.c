@@ -6,6 +6,9 @@
 
 int main(int argc, char **argv){
   srand(time(NULL) ^ getpid());
+
+  enable_fas_tournament_debug(getenv("DEBUG") != NULL);
+
   FILE *argf = NULL;
 
   if(argc > 1){
