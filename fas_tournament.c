@@ -367,15 +367,6 @@ static double *initial_scores(tournament *t){
   return scores;
 }
 
-#define CHUNK_SIZE 8
-static void optimise_subranges_thoroughly(tournament *t, size_t n, size_t *items){
-  for(size_t i = 0; i < n; i += CHUNK_SIZE){
-    size_t length = CHUNK_SIZE;
-    if(i + length > n) length = n - i;
-    brute_force_optimise(t, length, items + i);
-  }
-}
-
 size_t *integer_range(size_t n){
   size_t *results = malloc(sizeof(size_t) * n);
 	for(size_t i = 0; i < n; i++){
@@ -435,8 +426,6 @@ size_t *optimal_ordering(tournament *t){
   force_connectivity(t, n, results);
   local_sort(t, n, results);
   FASDEBUG("Smoothing\n");
-  FASDEBUG("  optimise_subranges_thoroughly\n");
-  optimise_subranges_thoroughly(t, n, results);
   FASDEBUG("  window_optimise(5)\n");
   window_optimise(t, n, results, 5);
   FASDEBUG("  window_optimise(7)\n");
