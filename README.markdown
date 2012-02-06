@@ -12,18 +12,18 @@ I would only give a fairly qualified recommendation in favour of it.
 
 Features:
 
-* It does a pretty good job. Not great, but doing great is mathematically impossible. The test suite scores it on a variety of data, and it's usually within a few % of the best known value.
-* It's quite fast. For small numbers of items (<= 100) it completes in a few 100ms. 
-* It's deterministic. There are theoretically better randomized algorithms for this but I wanted it to produce reproducable results.
+* It does a pretty good job. The test suite requires that it gets within 5% of the best known result on a variety of data, and it beats that with a comfortable margin.
+* It's quite fast. For small numbers of items (<= 100) it completes in a few 100ms, going up to a few seconds for thousands of items.
+* It's deterministic. Most of the best-of-breed algorithms for this problem are randomized. Empirically, this seems to produce consistently better scores than they do (but that may be errors in my implementation of them)
 * It respects condorcet partitions. That is, if you partition the candidates into two sets A and B such that W_ab > W_ba for any a in A and b in B, it will always put everything in A first
-* The result is locally optimal int he sense that no change which involves only moving a single element will improve the score
+* The result is locally optimal in the sense that no change which involves only moving a single element will improve the score
 * Everything runs clean under valgrind with all test data
   
 Downsides:
 
 * The theoretical bounds on how bad the error can be are extremely weak to non-existent
-* The performance is O(n^2) in the number of items. 
-* The API for the library is extremely poorly thought out at present.
+* The performance is O(n^2) in the number of items, even when far fewer than O(n^2) comparisons are present. 
+* The API for the library is fairly poorly thought out at present.
 * The command line interface is terribly rudimentary
 
 All that being said, it appears to work and work reasonably well.
