@@ -45,6 +45,8 @@ TEST_CASES.sort!
 quality_failures = []
 runtime_failures = []
 correctness_failures = []
+losses = []
+runtimes = []
 
 failed = false
 TEST_CASES.each do |test|
@@ -87,6 +89,9 @@ TEST_CASES.each do |test|
   
   quality_lost = (1 - score / best_score) * 100
 
+  losses << quality_lost
+  runtimes << ft[:runtime]
+
   quality_failed = quality_lost > 5
   runtime_failed = ft[:runtime] > 60
 
@@ -113,6 +118,13 @@ def report_failures(name, failures)
 
   puts "  #{name}: #{failures.join(", ")}"
 end
+
+def avg(ls)
+  ls.inject(0.0){|x, y| x + y } / ls.length
+end
+
+puts "Average runtime: #{"%.2f" % avg(runtimes)}"
+puts "Average loss: #{"%.2f" % avg(losses)}"
 
 if failed
   puts "Failures:" 
