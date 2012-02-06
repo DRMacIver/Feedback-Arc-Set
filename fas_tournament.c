@@ -46,10 +46,8 @@ double score_fas_tournament(tournament *t, size_t count, size_t *data){
 	double score = 0.0;
 
 	for(size_t i = 0; i < count; i++){
-    double *score_array = t->entries + data[i] * t->size;
-
 		for(size_t j = i + 1; j < count; j++){
-			score += score_array[data[j]];
+			score +=  t->entries[data[i] * t->size + data[j]];
 		}
 	}
 
@@ -342,7 +340,7 @@ static double *initial_scores(tournament *t){
     scores[i] = 1;
   }
 
-  for(int times = 0; times < 20; times++){
+  for(int times = 0; times < 5; times++){
     for(size_t i = 0; i < t->size; i++){
       working_buffer[i] = 0;
     }
