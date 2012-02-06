@@ -386,17 +386,6 @@ size_t *integer_range(size_t n){
   return results;
 }
 
-static void heavy_duty_smoothing(tournament *t, size_t n, size_t *items){
-  FASDEBUG("  optimise_subranges_thoroughly\n");
-  optimise_subranges_thoroughly(t, n, items);
-  FASDEBUG("  window_optimise(5)\n");
-  window_optimise(t, n, items, 5);
-  FASDEBUG("  window_optimise(7)\n");
-  window_optimise(t, n, items, 7); 
-  FASDEBUG("  single_move_optimization\n");
-  single_move_optimization(t, n, items);
-}
-
 double best_score_lower_bound(tournament *t, size_t n, size_t *items){
   double tot = 0.0;
   double vtot = 0.0;
@@ -423,9 +412,16 @@ size_t *optimal_ordering(tournament *t){
   double *scores = initial_scores(t);
   FASDEBUG("Sorting\n");
   sort_by_score(n, scores, results);
-  FASDEBUG("Smoothing\n");
-  heavy_duty_smoothing(t, n, results);
   free(scores);
+  FASDEBUG("Smoothing\n");
+  FASDEBUG("  optimise_subranges_thoroughly\n");
+  optimise_subranges_thoroughly(t, n, results);
+  FASDEBUG("  window_optimise(5)\n");
+  window_optimise(t, n, results, 5);
+  FASDEBUG("  window_optimise(7)\n");
+  window_optimise(t, n, results, 7); 
+  FASDEBUG("  single_move_optimization\n");
+  single_move_optimization(t, n, results);
   return results;
 }
 
