@@ -5,7 +5,8 @@ require "json"
 require "smart_colored"
 require "trollop"
 
-require 'trollop'
+STDOUT.sync = true
+STDERR.sync = true
 
 OPTS = Trollop::options do
   opt :"valgrind", "Run tests with valgrind", :default => false
@@ -92,7 +93,7 @@ TEST_CASES.each do |test|
   losses << quality_lost
   runtimes << ft[:runtime]
 
-  quality_failed = quality_lost > 5
+  quality_failed = quality_lost > 3
   runtime_failed = ft[:runtime] > 60
 
   failed ||= valgrind_failed
