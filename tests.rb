@@ -10,6 +10,7 @@ STDERR.sync = true
 
 OPTS = Trollop::options do
   opt :"valgrind", "Run tests with valgrind", :default => false
+  opt :"summary-only", "Only show summary results", :default => false
 end
 
 
@@ -106,12 +107,14 @@ TEST_CASES.each do |test|
   quality_failures << test_name if quality_failed
   runtime_failures << test_name if runtime_failed
 
-  puts test_name
-  puts "  Valgrind:      #{valgrind_failed ? FAILURE : SUCCESS}" if OPTS[:"valgrind"]
-  puts "  Loss:     #{"%.2f" % quality_lost} #{quality_failed ? FAILURE : SUCCESS}"
-  puts "  Runtime:  #{"%.2f" % ft[:runtime]} #{runtime_failed ? FAILURE : SUCCESS}"
-  puts "  Correctness:  #{correctness_failed} #{correctness_failed ? FAILURE : SUCCESS}"
-  puts
+  unless OPTS[:"summary-only"]
+    puts test_name
+    puts "  Valgrind:      #{valgrind_failed ? FAILURE : SUCCESS}" if OPTS[:"valgrind"]
+    puts "  Loss:     #{"%.2f" % quality_lost} #{quality_failed ? FAILURE : SUCCESS}"
+    puts "  Runtime:  #{"%.2f" % ft[:runtime]} #{runtime_failed ? FAILURE : SUCCESS}"
+    puts "  Correctness:  #{correctness_failed} #{correctness_failed ? FAILURE : SUCCESS}"
+    puts
+  end
 end
 
 def report_failures(name, failures)
