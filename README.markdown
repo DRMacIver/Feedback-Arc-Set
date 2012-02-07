@@ -32,10 +32,10 @@ All that being said, it appears to work and work reasonably well.
 
 The input to the solver is a sparse matrix format. It takes the form
 
-  n
-  i1 j1 x1
-  i2 j2 x2
-  ...
+    n
+    i1 j1 x1
+    i2 j2 x2
+    ...
 
 where n is the number of dimensions and the i, j, x are triples with i, j integers with 0 <= i, j < n and x a float with x >= 0. This is interpreted as an nxn matrix with Aij = x. 
 
