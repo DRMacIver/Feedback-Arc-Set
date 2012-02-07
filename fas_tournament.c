@@ -385,15 +385,19 @@ void force_connectivity(tournament *t, size_t n, size_t *items){
 }
 
 
-void local_sort(tournament *t, size_t n, size_t *items){
+int local_sort(tournament *t, size_t n, size_t *items){
+  int changed = 0;
   for(size_t i = 1; i < n; i++){
     size_t j = i;
 
     while(j > 0 && tournament_compare(t, items[j], items[j - 1]) <= 0){
+      changed = 1;
       swap(items + j, items + j - 1);
       j--;
     }
   }
+  
+  return changed;
 }
 
 size_t *optimal_ordering(tournament *t){
@@ -406,13 +410,21 @@ size_t *optimal_ordering(tournament *t){
   free(scores);
   force_connectivity(t, n, results);
   local_sort(t, n, results);
-  FASDEBUG("Smoothing\n");
-  FASDEBUG("  window_optimise(5)\n");
-  window_optimise(t, n, results, 5);
-  FASDEBUG("  window_optimise(7)\n");
-  window_optimise(t, n, results, 7); 
+
+  for(int i = 0; i < 5; i++){
+    FASDEBUG("Smoothing stage %d\n", i + 1);
+    int changed = 0;
+
+    FASDEBUG("  window_optimise(5)\n");
+    changed |= window_optimise(t, n, results, 5);
+    FASDEBUG("  window_optimise(7)\n");
+    changed |= window_optimise(t, n, results, 7); 
+    FASDEBUG("  local_sort\n");
+    changed |= local_sort(t, n, results);
+    if(!changed) break;
+  }
+
   FASDEBUG("  single_move_optimization\n");
-  local_sort(t, n, results);
   single_move_optimization(t, n, results);
   return results;
 }
