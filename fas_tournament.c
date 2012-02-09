@@ -8,6 +8,7 @@
 #define ACCURACY 0.001
 #define SMOOTHING 0.05
 #define JUST_BRUTE_FORCE_IT 8
+#define CAN_BRUTE_FORCE_IT 10
 #define MAX_MISSES 5
 #define MIN_IMPROVEMENT 0.00001
 
@@ -54,6 +55,17 @@ double score_fas_tournament(tournament *t, size_t count, size_t *data){
 	return score;
 }
 
+double reverse_score_fas_tournament(tournament *t, size_t count, size_t *data){
+      double score = 0.0;
+
+      for(size_t i = 0; i < count; i++){
+              for(size_t j = 0; j < i; j++){
+                      score +=  t->entries[data[i] * t->size + data[j]];
+              }
+      }
+
+      return score;
+}
 
 static size_t count_tokens(char *c){
   if(*c == '\0') return 0;
@@ -215,6 +227,25 @@ static int brute_force_optimise(tournament *t, size_t n, size_t *items){
 
 	return changed;
 }
+
+int reorder_into_shape(tournament *t, size_t n, size_t *items){
+  if(n <= CAN_BRUTE_FORCE_IT) return brute_force_optimise(t, n, items);
+
+  int changed = 0;
+  if(reverse_score_fas_tournament(t, n, items) > score_fas_tournament(t, n, items)){
+    FASDEBUG("Reversing %lu items\n", n);
+    changed = 1;
+    reverse(items, items + n - 1);
+  }
+
+  size_t split = n / 2;
+
+  changed |= reorder_into_shape(t, split, items);
+  changed |= reorder_into_shape(t, n - split, items + split);
+
+  return changed;
+}
+
 
 static int window_optimise(tournament *t, size_t n, size_t *items, size_t window){
   if(n <= window){
@@ -409,6 +440,8 @@ size_t *optimal_ordering(tournament *t){
   sort_by_score(n, scores, results);
   free(scores);
   force_connectivity(t, n, results);
+  FASDEBUG("Reordering\n");
+  reorder_into_shape(t, n, results);
   local_sort(t, n, results);
   FASDEBUG("  single_move_optimization\n");
   single_move_optimization(t, n, results);
