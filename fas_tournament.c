@@ -33,6 +33,20 @@ void del_tournament(tournament *t){
 }
 
 
+typedef struct {
+  size_t *buffer;
+} fas_optimiser;
+
+static fas_optimiser *new_optimiser(tournament *t){
+  fas_optimiser *it = malloc(sizeof(fas_optimiser));
+  it->buffer = malloc(sizeof(size_t) * t->size);
+  return it;
+}
+
+void del_optimiser(fas_optimiser *o){
+  free(o);
+}
+
 inline double tournament_get(tournament *t, size_t i, size_t j){
   size_t n = t->size;
   assert(i >= 0); 
@@ -185,7 +199,7 @@ static void sort(size_t n, size_t *values){
   }
 }
 
-static int brute_force_optimise(tournament *t, size_t n, size_t *items){
+static int brute_force_optimise(fas_optimiser *o, tournament *t, size_t n, size_t *items){
 	if(n <= 1) return 0;
 	if(n == 2){
 		int c = tournament_compare(t, items[0], items[1]);
@@ -197,7 +211,7 @@ static int brute_force_optimise(tournament *t, size_t n, size_t *items){
 
   int changed = 0;
 
-	size_t *working_buffer = malloc(sizeof(size_t) * n);
+	size_t *working_buffer = o->buffer;
 	memcpy(working_buffer, items, n * sizeof(size_t));
   sort(n, working_buffer);
 
@@ -211,14 +225,12 @@ static int brute_force_optimise(tournament *t, size_t n, size_t *items){
 		}
   }
 
-	free(working_buffer);
-
 	return changed;
 }
 
-static int window_optimise(tournament *t, size_t n, size_t *items, size_t window){
+static int window_optimise(fas_optimiser *o, tournament *t, size_t n, size_t *items, size_t window){
   if(n <= window){
-    return brute_force_optimise(t, n, items);
+    return brute_force_optimise(o, t, n, items);
   }
   double last_score = score_fas_tournament(t, n, items);
   int changed_at_all = 0;
@@ -226,7 +238,7 @@ static int window_optimise(tournament *t, size_t n, size_t *items, size_t window
   while(changed){
     changed = 0;
     for(size_t i = 0; i < n - window; i++){
-      changed |= brute_force_optimise(t, window, items + i); 
+      changed |= brute_force_optimise(o, t, window, items + i); 
     }
     double new_score = score_fas_tournament(t, n, items);
 
@@ -401,6 +413,7 @@ int local_sort(tournament *t, size_t n, size_t *items){
 }
 
 size_t *optimal_ordering(tournament *t){
+  fas_optimiser *o = new_optimiser(t);
   size_t n = t->size;
 	size_t *results = integer_range(n);
   FASDEBUG("Scoring\n");
@@ -420,9 +433,9 @@ size_t *optimal_ordering(tournament *t){
     int changed = 0;
 
     FASDEBUG("  window_optimise(5)\n");
-    changed |= window_optimise(t, n, results, 5);
+    changed |= window_optimise(o, t, n, results, 5);
     FASDEBUG("  window_optimise(7)\n");
-    changed |= window_optimise(t, n, results, 7); 
+    changed |= window_optimise(o, t, n, results, 7); 
     FASDEBUG("  local_sort\n");
     changed |= local_sort(t, n, results);
     smoothing_changed |= changed;
@@ -434,6 +447,7 @@ size_t *optimal_ordering(tournament *t){
     single_move_optimization(t, n, results);
   }
 
+  del_optimiser(o);
   return results;
 }
 
