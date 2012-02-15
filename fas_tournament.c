@@ -422,9 +422,8 @@ size_t *optimal_ordering(tournament *t){
   sort_by_score(n, scores, results);
   free(scores);
   force_connectivity(t, n, results);
+  window_optimise(o, t, n, results, 8);
   local_sort(t, n, results);
-  FASDEBUG("  single_move_optimization\n");
-  single_move_optimization(t, n, results);
 
   int smoothing_changed = 0;
 

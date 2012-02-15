@@ -17,7 +17,7 @@ end
 BASE = File.dirname(__FILE__)
 FAS = File.join(BASE, "fas")
 
-TEST_CASES = (ARGV.length > 0 ? ARGV : Dir["#{BASE}/testcases/*.data"]).select{|x| x =~ /\.data$/ }
+TEST_CASES = (ARGV.length > 0 ? ARGV : Dir["#{BASE}/testcases/**/*.data"]).select{|x| x =~ /\.data$/ }
 
 FAILURE = "FAILURE".colored.red
 SUCCESS = "SUCCESS".colored.green
