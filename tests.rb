@@ -51,7 +51,7 @@ losses = []
 runtimes = []
 
 failed = false
-TEST_CASES.each do |test|
+TEST_CASES.each_with_index do |test, index|
   score_file = test.gsub(/.data$/, ".json")
 
   best_score = 0
@@ -114,6 +114,9 @@ TEST_CASES.each do |test|
     puts "  Runtime:  #{"%.2f" % ft[:runtime]} #{runtime_failed ? FAILURE : SUCCESS}"
     puts "  Correctness:  #{correctness_failed} #{correctness_failed ? FAILURE : SUCCESS}"
     puts
+  else 
+    STDOUT.write "\rTest #{index + 1} / #{TEST_CASES.size} complete"
+    STDOUT.puts if index == TEST_CASES.size - 1
   end
 end
 
