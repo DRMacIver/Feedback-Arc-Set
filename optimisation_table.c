@@ -1,5 +1,6 @@
 #include "optimisation_table.h"
 #include <string.h>
+#include <stdio.h>
 
 #define MAX_OCCUPANCY_RATIO 0.9
 #define DEFAULT_TABLE_SIZE 65536
@@ -55,7 +56,7 @@ void optimisation_table_del(optimisation_table *ot){
 ot_entry *optimisation_table_lookup_internal(optimisation_table *ot, size_t length, size_t *data, int must_copy){
   uint64_t h = set_hash(length, data);
 
-  size_t mask = ot->length = 1;
+  size_t mask = ot->length - 1;
   size_t p = (size_t)(h & mask);
 
   while(1){
@@ -90,3 +91,6 @@ ot_entry *optimisation_table_lookup_internal(optimisation_table *ot, size_t leng
   }
 }
 
+ot_entry *optimisation_table_lookup(optimisation_table *ot, size_t length, size_t *data){
+  return optimisation_table_lookup_internal(ot, length, data, 1);
+}

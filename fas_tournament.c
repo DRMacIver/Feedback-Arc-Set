@@ -4,10 +4,10 @@
 #include <assert.h>
 #include <ctype.h>
 #include <math.h>
+#include "optimisation_table.h"
 
 #define ACCURACY 0.001
 #define SMOOTHING 0.05
-#define JUST_BRUTE_FORCE_IT 8
 #define MAX_MISSES 5
 #define MIN_IMPROVEMENT 0.00001
 
@@ -35,15 +35,19 @@ void del_tournament(tournament *t){
 
 typedef struct {
   size_t *buffer;
+  optimisation_table *opt_table;
 } fas_optimiser;
 
 static fas_optimiser *new_optimiser(tournament *t){
   fas_optimiser *it = malloc(sizeof(fas_optimiser));
   it->buffer = malloc(sizeof(size_t) * t->size);
+  it->opt_table = optimisation_table_new();
   return it;
 }
 
 void del_optimiser(fas_optimiser *o){
+  free(o->buffer);
+  optimisation_table_del(o->opt_table);
   free(o);
 }
 
@@ -189,16 +193,6 @@ static inline void swap(size_t *x, size_t *y){
 	*y = z;
 }
 
-static void sort(size_t n, size_t *values){
-  for(size_t i = 1; i < n; i++){
-    size_t k = i;
-    while(k > 0 && values[k] < values[k - 1]){
-      swap(values + k, values + k - 1);
-      k--;
-    }
-  }
-}
-
 static int brute_force_optimise(fas_optimiser *o, tournament *t, size_t n, size_t *items){
 	if(n <= 1) return 0;
 	if(n == 2){
@@ -207,25 +201,50 @@ static int brute_force_optimise(fas_optimiser *o, tournament *t, size_t n, size_
 		return c > 0;
 	}
 
-	double best_score = score_fas_tournament(t, n, items);
+  ot_entry *ote = optimisation_table_lookup(o->opt_table, n, items);
 
-  int changed = 0;
+  double existing_score = score_fas_tournament(t, n, items);
 
-	size_t *working_buffer = o->buffer;
-	memcpy(working_buffer, items, n * sizeof(size_t));
-  sort(n, working_buffer);
+  if(ote->value >= 0){
+    // We already have a best calculation for this entry
+    if(existing_score < ote->value){
+      // We know a better way to order these
+      memcpy(items, ote->data, n * sizeof(size_t));
+      return 1;
+    } else {
+      return 0;
+    }
+  } else {
+    size_t *best_value_seen = malloc(n * sizeof(size_t));
+    size_t *pristine_copy = malloc(n * sizeof(size_t));
+    memcpy(pristine_copy, items, n * sizeof(size_t));
+    memcpy(best_value_seen, items, n * sizeof(size_t));
 
-	while(next_permutation(n, working_buffer) < n){
-		double score = score_fas_tournament(t, n, working_buffer);
+    int changed = 0;
 
-		if(score > best_score){
-      changed = 1;
-			best_score = score;
-			memcpy(items, working_buffer, n * sizeof(size_t));
-		}
+    double best_score_so_far = existing_score;
+
+    for(size_t i = 0; i < n; i++){
+      memcpy(items, pristine_copy, n * sizeof(size_t));
+      swap(items, items + i);
+      brute_force_optimise(o, t, n-1, items+1);
+      double new_score = score_fas_tournament(t, n, items);
+      if(new_score > best_score_so_far){
+        memcpy(best_value_seen, items, n * sizeof(size_t));
+        changed = 1;
+        best_score_so_far = new_score;
+      }
+    }
+
+    ote = optimisation_table_lookup(o->opt_table, n, items);
+    memcpy(items, best_value_seen, n * sizeof(size_t));
+    ote->value = best_score_so_far;
+    memcpy(ote->data, items, n * sizeof(size_t));
+
+    free(best_value_seen);
+    free(pristine_copy);
+    return changed;
   }
-
-	return changed;
 }
 
 static int window_optimise(fas_optimiser *o, tournament *t, size_t n, size_t *items, size_t window){
@@ -422,7 +441,7 @@ size_t *optimal_ordering(tournament *t){
   sort_by_score(n, scores, results);
   free(scores);
   force_connectivity(t, n, results);
-  window_optimise(o, t, n, results, 8);
+  window_optimise(o, t, n, results, 10);
   local_sort(t, n, results);
 
   int smoothing_changed = 0;
