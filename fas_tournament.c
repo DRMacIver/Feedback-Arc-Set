@@ -198,7 +198,7 @@ static inline void swap(size_t *x, size_t *y){
 	*y = z;
 }
 
-static int brute_force_optimise(fas_optimiser *o, tournament *t, size_t n, size_t *items){
+static int table_optimise(fas_optimiser *o, tournament *t, size_t n, size_t *items){
 	if(n <= 1) return 0;
 	if(n == 2){
 		int c = tournament_compare(t, items[0], items[1]);
@@ -232,7 +232,7 @@ static int brute_force_optimise(fas_optimiser *o, tournament *t, size_t n, size_
     for(size_t i = 0; i < n; i++){
       memcpy(items, pristine_copy, n * sizeof(size_t));
       swap(items, items + i);
-      brute_force_optimise(o, t, n-1, items+1);
+      table_optimise(o, t, n-1, items+1);
       double new_score = score_fas_tournament(t, n, items);
       if(new_score > best_score_so_far){
         memcpy(best_value_seen, items, n * sizeof(size_t));
@@ -255,7 +255,7 @@ static int brute_force_optimise(fas_optimiser *o, tournament *t, size_t n, size_
 static int window_optimise(fas_optimiser *o, tournament *t, size_t n, size_t *items, size_t window){
   FASDEBUG("Window optimize %lu\n", window);
   if(n <= window){
-    return brute_force_optimise(o, t, n, items);
+    return table_optimise(o, t, n, items);
   }
   double last_score = score_fas_tournament(t, n, items);
   int changed_at_all = 0;
@@ -263,7 +263,7 @@ static int window_optimise(fas_optimiser *o, tournament *t, size_t n, size_t *it
   while(changed){
     changed = 0;
     for(size_t i = 0; i < n - window; i++){
-      changed |= brute_force_optimise(o, t, window, items + i); 
+      changed |= table_optimise(o, t, window, items + i); 
     }
     double new_score = score_fas_tournament(t, n, items);
 
@@ -444,11 +444,11 @@ int stride_optimise(tournament *t, fas_optimiser *o, size_t n, size_t *data, siz
   FASDEBUG("stride optimise: n=%lu, stride=%lu\n", n, stride);
   int changed = 0;
   while(n > stride){
-    changed |= brute_force_optimise(o, t, stride, data);
+    changed |= table_optimise(o, t, stride, data);
     data += stride;
     n -= stride;
   }
-  changed |= brute_force_optimise(o, t, n, data);
+  changed |= table_optimise(o, t, n, data);
   return changed;
 }
 
@@ -458,7 +458,7 @@ size_t *optimal_ordering(tournament *t){
 	size_t *results = integer_range(n);
 
   if(n <= 15){
-    brute_force_optimise(o, t, n, results);
+    table_optimise(o, t, n, results);
     del_optimiser(o);
     return results;
   }
