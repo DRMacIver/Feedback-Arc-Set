@@ -51,6 +51,11 @@ void del_optimiser(fas_optimiser *o){
   free(o);
 }
 
+void reset_optimiser(fas_optimiser *opt){
+  optimisation_table_del(opt->opt_table);
+  opt->opt_table = optimisation_table_new();
+}
+
 inline double tournament_get(tournament *t, size_t i, size_t j){
   size_t n = t->size;
   assert(i >= 0); 
@@ -435,32 +440,27 @@ size_t *optimal_ordering(tournament *t){
   fas_optimiser *o = new_optimiser(t);
   size_t n = t->size;
 	size_t *results = integer_range(n);
-  FASDEBUG("Scoring\n");
+
+  if(n <= 15){
+    brute_force_optimise(o, t, n, results);
+    del_optimiser(o);
+    return results;
+  }
+
   double *scores = initial_scores(t);
-  FASDEBUG("Sorting\n");
   sort_by_score(n, scores, results);
   free(scores);
   force_connectivity(t, n, results);
   local_sort(t, n, results);
-
-  int smoothing_changed = 0;
-
+  
   for(int i = 0; i < 5; i++){
-    FASDEBUG("Smoothing stage %d\n", i + 1);
-    int changed = 0;
+    if(!window_optimise(o, t, n, results, 12)) break; 
+    local_sort(t, n, results);
+    single_move_optimization(t,n,results);
+    reset_optimiser(o);
+  } 
 
-    FASDEBUG("  window_optimise(9)\n");
-    changed |= window_optimise(o, t, n, results, 7); 
-    FASDEBUG("  local_sort\n");
-    changed |= local_sort(t, n, results);
-    smoothing_changed |= changed;
-    if(!changed) break;
-  }
-
-  if(smoothing_changed){
-    FASDEBUG("  single_move_optimization\n");
-    single_move_optimization(t, n, results);
-  }
+  local_sort(t, n, results);
 
   del_optimiser(o);
   return results;
