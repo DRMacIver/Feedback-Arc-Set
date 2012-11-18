@@ -441,7 +441,6 @@ size_t *optimal_ordering(tournament *t){
   sort_by_score(n, scores, results);
   free(scores);
   force_connectivity(t, n, results);
-  window_optimise(o, t, n, results, 10);
   local_sort(t, n, results);
 
   int smoothing_changed = 0;
@@ -450,9 +449,7 @@ size_t *optimal_ordering(tournament *t){
     FASDEBUG("Smoothing stage %d\n", i + 1);
     int changed = 0;
 
-    FASDEBUG("  window_optimise(5)\n");
-    changed |= window_optimise(o, t, n, results, 5);
-    FASDEBUG("  window_optimise(7)\n");
+    FASDEBUG("  window_optimise(9)\n");
     changed |= window_optimise(o, t, n, results, 7); 
     FASDEBUG("  local_sort\n");
     changed |= local_sort(t, n, results);
