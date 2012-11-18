@@ -466,6 +466,7 @@ size_t *optimal_ordering(tournament *t){
   double *scores = initial_scores(t);
   sort_by_score(n, scores, results);
   free(scores);
+  force_connectivity(t,n,results);
   local_sort(t, n, results);
 
   stride_optimise(t, o, n, results, 11); 
