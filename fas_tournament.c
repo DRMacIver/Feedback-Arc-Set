@@ -481,6 +481,7 @@ size_t *optimal_ordering(tournament *t){
     changed |= local_sort(t, n, results);
     reset_optimiser(o);
     if(!changed) break;
+    single_move_optimization(t,n,results);
   } 
 
   window_optimise(o, t, n, results, 10);
