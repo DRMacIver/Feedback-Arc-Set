@@ -253,6 +253,7 @@ static int brute_force_optimise(fas_optimiser *o, tournament *t, size_t n, size_
 }
 
 static int window_optimise(fas_optimiser *o, tournament *t, size_t n, size_t *items, size_t window){
+  FASDEBUG("Window optimize %lu\n", window);
   if(n <= window){
     return brute_force_optimise(o, t, n, items);
   }
@@ -329,6 +330,7 @@ static void move_pointer_left(size_t *x, size_t offset){
 }
 
 static int single_move_optimization(tournament *t, size_t n, size_t *items){
+  FASDEBUG("Single move optimization\n");
   int changed = 1;
   int changed_at_all = 0;
   while(changed){
@@ -412,6 +414,7 @@ size_t *integer_range(size_t n){
 }
 
 void force_connectivity(tournament *t, size_t n, size_t *items){
+  FASDEBUG("force connectivity\n");
   if(!n) return;
   for(size_t i = 0; i < n - 1; i++){
     size_t j = i + 1;
@@ -422,6 +425,7 @@ void force_connectivity(tournament *t, size_t n, size_t *items){
 
 
 int local_sort(tournament *t, size_t n, size_t *items){
+  FASDEBUG("local sort\n");
   int changed = 0;
   for(size_t i = 1; i < n; i++){
     size_t j = i;
@@ -433,6 +437,18 @@ int local_sort(tournament *t, size_t n, size_t *items){
     }
   }
   
+  return changed;
+}
+
+int stride_optimise(tournament *t, fas_optimiser *o, size_t n, size_t *data, size_t stride){
+  FASDEBUG("stride optimise: n=%lu, stride=%lu\n", n, stride);
+  int changed = 0;
+  while(n > stride){
+    changed |= brute_force_optimise(o, t, stride, data);
+    data += stride;
+    n -= stride;
+  }
+  changed |= brute_force_optimise(o, t, n, data);
   return changed;
 }
 
@@ -450,16 +466,24 @@ size_t *optimal_ordering(tournament *t){
   double *scores = initial_scores(t);
   sort_by_score(n, scores, results);
   free(scores);
-  force_connectivity(t, n, results);
   local_sort(t, n, results);
-  
-  for(int i = 0; i < 5; i++){
-    if(!window_optimise(o, t, n, results, 12)) break; 
-    local_sort(t, n, results);
-    single_move_optimization(t,n,results);
+
+  stride_optimise(t, o, n, results, 11); 
+  local_sort(t, n, results);
+  stride_optimise(t, o, n, results, 13); 
+  local_sort(t, n, results);
+  reset_optimiser(o);
+   
+  for(int i = 0; i < 10; i++){
+    int changed = 0;
+    changed |= stride_optimise(t,o, n, results, 12);
+    changed |= stride_optimise(t,o, n, results, 7);
+    changed |= local_sort(t, n, results);
     reset_optimiser(o);
+    if(!changed) break;
   } 
 
+  window_optimise(o, t, n, results, 10);
   local_sort(t, n, results);
 
   del_optimiser(o);
