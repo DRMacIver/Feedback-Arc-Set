@@ -56,3 +56,32 @@ inline static size_t saturate(size_t v){
 	v |= v >> 32;
 	return v;
 }
+
+size_t random_number(size_t n){
+	size_t mask = saturate(n);
+
+	size_t result;
+
+	for(;;){
+		result = rand() & mask;
+		if(result < n) return result;
+	}
+}
+
+void shuffle(size_t length, size_t *data){
+	for(size_t k = length - 1; k > 0; k--){
+		size_t j = random_number(k+1);
+		assert(j <= k);
+		swap(data + j, data + k);
+	}
+}
+
+void generate_shuffled_range(size_t length, size_t *data){
+	data[0] = 0;
+	for(size_t i = 1; i < length; i++){
+		size_t j = random_number(i + 1);
+		if(j < i) data[i] = data[j];
+		data[j] = i;
+	}
+}
+
