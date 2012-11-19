@@ -1,4 +1,4 @@
-C_FLAGS=-pedantic --std=c99 -Wall -Werror -g -O3
+C_FLAGS=-pedantic --std=c99 -Wall -Werror -g -O3 -Wextra
 
 SOURCE=$(wildcard *.c **/*.c)
 OBJ=$(SOURCE:.c=.o)

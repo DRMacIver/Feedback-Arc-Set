@@ -58,9 +58,7 @@ void reset_optimiser(fas_optimiser *opt){
 
 inline double tournament_get(tournament *t, size_t i, size_t j){
   size_t n = t->size;
-  assert(i >= 0); 
   assert(i < n); 
-  assert(j >= 0); 
   assert(j < n);
   return t->entries[n * i + j];
 }

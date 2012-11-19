@@ -35,7 +35,7 @@ size_t next_permutation(size_t length, size_t *data){
 	// We want to find the largest index l such that data[k] < data[l]
 	size_t l = k + 1;
 
-	for(int s = l; s < length; s++){
+	for(size_t s = l; s < length; s++){
 		if(data[k]  < data[s]) l = s;
 	}
 
