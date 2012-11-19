@@ -5,6 +5,7 @@
 #include <ctype.h>
 #include <math.h>
 #include "optimisation_table.h"
+#include "population.h"
 
 #define ACCURACY 0.001
 #define SMOOTHING 0.05
@@ -450,6 +451,24 @@ int stride_optimise(tournament *t, fas_optimiser *o, size_t n, size_t *data, siz
   return changed;
 }
 
+ 
+
+population *build_population(tournament *t, size_t n, size_t ps){
+  population *p = population_new(ps, n);
+
+  for(size_t i = 0; i < ps; i++){
+    size_t *data = malloc(sizeof(size_t) * n);
+    generate_shuffled_range(n, data);
+    p->members[i].data = data;
+    p->members[i].score = score_fas_tournament(t, n, data);
+  }
+
+  population_heapify(p);
+
+  return p;
+}
+
+
 size_t *optimal_ordering(tournament *t){
   fas_optimiser *o = new_optimiser(t);
   size_t n = t->size;
@@ -460,6 +479,10 @@ size_t *optimal_ordering(tournament *t){
     del_optimiser(o);
     return results;
   }
+
+  population *p = build_population(t, n, 1000);
+  memcpy(results, p->members[0].data, n * sizeof(size_t));
+  population_del(p);
 
   double *scores = initial_scores(t);
   sort_by_score(n, scores, results);

@@ -3,14 +3,15 @@
 
 population *population_new(size_t population_count, size_t members_size){
   size_t size = sizeof(population_member) * population_count + sizeof(population);
-  population *p = calloc(1, size);
+  population *p = malloc(size);
+  memset(p, '\0', size);
   p->members_size = members_size;
   p->population_count = population_count;
   return p;
 }
 
 void population_del(population *p){
-  for(size_t i = 0; i < p->population_count; p++) free(p->members[i].data);
+  for(size_t i = 0; i < p->population_count; i++) free(p->members[i].data);
   free(p);
 }
 
