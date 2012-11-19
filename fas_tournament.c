@@ -293,24 +293,6 @@ int compare_index_with_score(const void *xx, const void *yy){
 }
 
 // Insertion sort for now. Everything else is O(n^2) anyway
-static void sort_by_score(size_t n, double *scores, size_t *values){
-  index_with_score *buffer = malloc(n * sizeof(index_with_score));
-
-  for(size_t i = 0; i < n; i++){
-    index_with_score *ix = buffer + i;
-    ix->index = values[i];
-    ix->score = scores[i];
-  }
-
-  qsort(buffer, n, sizeof(index_with_score), compare_index_with_score);
-
-  for(size_t i = 0; i < n; i++){
-    values[i] = buffer[i].index; 
-  }
-
-  free(buffer);
-}
-
 static void move_pointer_right(size_t *x, size_t offset){
   while(offset){
     size_t *next = x + 1;
@@ -367,42 +349,6 @@ static int single_move_optimization(tournament *t, size_t n, size_t *items){
     }
   }
   return changed_at_all;
-}
-
-#define SCORE_SMOOTHING 0.1
-static double *initial_scores(tournament *t){
-  double *scores = malloc(sizeof(double) * t->size);
-  double *working_buffer = malloc(sizeof(double) * t->size);
-
-  for(size_t i = 0; i < t->size; i++){
-    scores[i] = 1;
-  }
-
-  for(int times = 0; times < 5; times++){
-    for(size_t i = 0; i < t->size; i++){
-      working_buffer[i] = 0;
-    }
-
-    for(size_t i = 0; i < t->size; i++){
-      double total_score = t->size * SCORE_SMOOTHING;
-      for(size_t j = 0; j < t->size; j++){
-        total_score += tournament_get(t, i, j);
-      }
-
-      for(size_t j = 0; j < t->size; j++){
-        working_buffer[j] += scores[i] * (SCORE_SMOOTHING + tournament_get(t, i, j)) / total_score;
-      }
-    }
-
-    memcpy(scores, working_buffer, sizeof(double) * t->size);
-    double tot = 0.0;
-    for(size_t i = 0; i < t->size; i++){
-      tot += scores[i];
-    }
-  }
-
-  free(working_buffer);
-  return scores;
 }
 
 size_t *integer_range(size_t n){
@@ -481,13 +427,10 @@ size_t *optimal_ordering(tournament *t){
     return results;
   }
 
-  population *p = build_population(t, n, 1000);
-  memcpy(results, p->members[0].data, n * sizeof(size_t));
+  population *p = build_population(t, n, 100);
+  memcpy(results, fittest_member(p), n * sizeof(size_t));
   population_del(p);
 
-  double *scores = initial_scores(t);
-  sort_by_score(n, scores, results);
-  free(scores);
   force_connectivity(t,n,results);
   local_sort(t, n, results);
 

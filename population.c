@@ -59,3 +59,17 @@ int population_contains_under(population *p, double key, size_t *data, size_t i)
 int population_contains(population *p, double key, size_t *data){
   return population_contains_under(p, key, data, 0);
 }
+
+size_t *fittest_member(population *p){
+  double best_score = p->members[0].score;
+  size_t *best_member = p->members[0].data;
+
+  for(size_t i = 1; i < p->population_count; i++){
+    if(p->members[i].score > best_score){
+      best_score = p->members[i].score;
+      best_member = p->members[i].data;
+    }
+  }
+
+  return best_member;
+}
