@@ -176,6 +176,7 @@ tournament *read_tournament(FILE *f){
     t->entries[n * i + j] += f;
   }
   free(line);
+  fclose(f);
   return t;
 }
 
