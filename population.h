@@ -17,4 +17,5 @@ void population_del(population *p);
 void population_heapify(population *p);
 int population_contains(population *p, double key, size_t *data);
 
-size_t *fittest_member(population *p);
+population_member fittest_member(population *p);
+void population_push(population *p, double key, size_t *data);

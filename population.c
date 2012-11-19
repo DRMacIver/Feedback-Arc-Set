@@ -60,16 +60,20 @@ int population_contains(population *p, double key, size_t *data){
   return population_contains_under(p, key, data, 0);
 }
 
-size_t *fittest_member(population *p){
-  double best_score = p->members[0].score;
-  size_t *best_member = p->members[0].data;
+population_member fittest_member(population *p){
+  population_member *best_member = p->members;
 
   for(size_t i = 1; i < p->population_count; i++){
-    if(p->members[i].score > best_score){
-      best_score = p->members[i].score;
-      best_member = p->members[i].data;
+    if(p->members[i].score > best_member->score){
+      best_member = p->members + i;
     }
   }
 
-  return best_member;
+  return *best_member;
+}
+
+void population_push(population *p, double key, size_t *data){
+  p->members[0].score = key;
+  memcpy(p->members[0].data, data, p->members_size* sizeof(size_t));
+  bubble_down(p, 0);
 }

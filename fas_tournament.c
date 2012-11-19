@@ -398,14 +398,14 @@ int stride_optimise(tournament *t, fas_optimiser *o, size_t n, size_t *data, siz
   return changed;
 }
 
- 
-
-population *build_population(tournament *t, size_t n, size_t ps){
+population *build_population(tournament *t,  size_t ps){
+  size_t n = t->size;
   population *p = population_new(ps, n);
 
   for(size_t i = 0; i < ps; i++){
     size_t *data = malloc(sizeof(size_t) * n);
     generate_shuffled_range(n, data);
+    force_connectivity(t,n,data);
     p->members[i].data = data;
     p->members[i].score = score_fas_tournament(t, n, data);
   }
@@ -415,6 +415,33 @@ population *build_population(tournament *t, size_t n, size_t ps){
   return p;
 }
 
+void mutate(size_t n, size_t *data){
+  size_t i = random_number(n);
+  size_t j;
+  do{ j = random_number(n); } while(i == j);
+  if(j < i){
+    size_t k = i;
+    i = j;
+    j = k;
+  }
+  reverse(data + i, data + j);  
+}
+
+void improve_population(tournament *t, population *p, size_t count){
+  size_t n = t->size;
+  size_t *data = malloc(n * sizeof(size_t));
+
+  for(size_t i = 0; i < count; i++){
+    size_t *candidate = p->members[random_number(p->population_count)].data;
+    memcpy(data, candidate, n * sizeof(size_t));
+    mutate(n, candidate);
+    double score = score_fas_tournament(t, t->size, candidate);
+    
+    if(!population_contains(p, score, candidate) && ((score > p->members[0].score) || !random_number(10))){
+      population_push(p, score, candidate);
+    }
+  }
+}
 
 size_t *optimal_ordering(tournament *t){
   fas_optimiser *o = new_optimiser(t);
@@ -427,11 +454,11 @@ size_t *optimal_ordering(tournament *t){
     return results;
   }
 
-  population *p = build_population(t, n, 100);
-  memcpy(results, fittest_member(p), n * sizeof(size_t));
+  population *p = build_population(t, 50);
+  improve_population(t, p, 1000);
+  memcpy(results, fittest_member(p).data, n * sizeof(size_t));
   population_del(p);
 
-  force_connectivity(t,n,results);
   local_sort(t, n, results);
 
   stride_optimise(t, o, n, results, 11); 
