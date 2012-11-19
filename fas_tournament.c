@@ -454,7 +454,7 @@ size_t *optimal_ordering(tournament *t){
     return results;
   }
 
-  population *p = build_population(t, 50);
+  population *p = build_population(t, 500);
   improve_population(t, p, 1000);
   memcpy(results, fittest_member(p).data, n * sizeof(size_t));
   population_del(p);
