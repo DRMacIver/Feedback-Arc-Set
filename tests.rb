@@ -1,6 +1,8 @@
 #!/usr/bin/env ruby
 
 require "rubygems"
+require "bundler"
+Bundler.setup
 require "json"
 require "smart_colored"
 require "trollop"
