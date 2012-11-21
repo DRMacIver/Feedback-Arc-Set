@@ -398,14 +398,51 @@ int stride_optimise(tournament *t, fas_optimiser *o, size_t n, size_t *data, siz
   return changed;
 }
 
-population *build_population(tournament *t,  size_t ps){
+
+
+void kwik_sort(fas_optimiser *o, tournament *t, size_t n, size_t *data, size_t depth){
+  if(n <= 1) return;
+  if(depth >= 10) return;
+
+  size_t *lt = malloc(n * sizeof(size_t));
+  size_t *gt = malloc(n * sizeof(size_t));
+
+  size_t ltn = 0;
+  size_t gtn = 0;
+
+  size_t pivot = data[random_number(n)];
+ 
+  for(size_t i = 0; i < n; i++){
+    int c = tournament_compare(t, data[i], pivot);
+    if(c < 0) lt[ltn++] = data[i];
+    else if(c == 0){
+      if(random_number(2)){
+        lt[ltn++] = data[i];
+      } else {
+        gt[gtn++] = data[i];
+      }
+    }
+    else gt[gtn++] = data[i];
+  }
+  
+  depth++;
+  kwik_sort(o, t, ltn, lt, depth);
+  kwik_sort(o, t, gtn, gt, depth);
+
+  memcpy(data, lt, sizeof(size_t) * ltn);
+  memcpy(data + ltn, gt, sizeof(size_t) * gtn);
+
+  free(lt);
+  free(gt);
+}
+
+population *build_population(fas_optimiser *o, tournament *t,  size_t ps){
   size_t n = t->size;
   population *p = population_new(ps, n);
 
   for(size_t i = 0; i < ps; i++){
-    size_t *data = malloc(sizeof(size_t) * n);
-    generate_shuffled_range(n, data);
-    force_connectivity(t,n,data);
+    size_t *data= integer_range(n);
+    kwik_sort(o, t, n, data, 0), 
     p->members[i].data = data;
     p->members[i].score = score_fas_tournament(t, n, data);
   }
@@ -441,6 +478,8 @@ void improve_population(tournament *t, population *p, size_t count){
       population_push(p, score, data);
     }
   }
+
+  free(data);
 }
 
 size_t *optimal_ordering(tournament *t){
@@ -454,7 +493,7 @@ size_t *optimal_ordering(tournament *t){
     return results;
   }
 
-  population *p = build_population(t, 500);
+  population *p = build_population(o, t, 500);
   improve_population(t, p, 1000);
   memcpy(results, fittest_member(p).data, n * sizeof(size_t));
   population_del(p);
