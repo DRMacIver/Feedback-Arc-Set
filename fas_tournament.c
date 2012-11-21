@@ -434,11 +434,11 @@ void improve_population(tournament *t, population *p, size_t count){
   for(size_t i = 0; i < count; i++){
     size_t *candidate = p->members[random_number(p->population_count)].data;
     memcpy(data, candidate, n * sizeof(size_t));
-    mutate(n, candidate);
+    mutate(n, data);
     double score = score_fas_tournament(t, t->size, candidate);
     
-    if(!population_contains(p, score, candidate) && ((score > p->members[0].score) || !random_number(10))){
-      population_push(p, score, candidate);
+    if(!population_contains(p, score, data) && ((score > p->members[0].score) || !random_number(10))){
+      population_push(p, score, data);
     }
   }
 }
