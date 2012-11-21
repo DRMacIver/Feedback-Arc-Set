@@ -437,7 +437,7 @@ void improve_population(tournament *t, population *p, size_t count){
     mutate(n, data);
     double score = score_fas_tournament(t, t->size, candidate);
     
-    if(!population_contains(p, score, data) && ((score > p->members[0].score) || !random_number(10))){
+    if(!population_contains(p, score, data)){
       population_push(p, score, data);
     }
   }
