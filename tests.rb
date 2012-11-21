@@ -67,6 +67,11 @@ TEST_CASES.each_with_index do |test, index|
   end
 
   start = Time.now
+  test_name = File.basename(test).gsub(/.data$/, "")
+  unless OPTS[:"summary-only"]
+    puts test_name  
+    STDOUT.flush
+  end
   ft = fas(test)
   score = ft[:score]
 
@@ -103,14 +108,12 @@ TEST_CASES.each_with_index do |test, index|
   failed ||= quality_failed
   failed ||= runtime_failed
 
-  test_name = File.basename(test).gsub(/.data$/, "")
 
   correctness_failures << test_name if correctness_failed
   quality_failures << test_name if quality_failed
   runtime_failures << test_name if runtime_failed
 
   unless OPTS[:"summary-only"]
-    puts test_name
     puts "  Valgrind:      #{valgrind_failed ? FAILURE : SUCCESS}" if OPTS[:"valgrind"]
     puts "  Loss:     #{"%.2f" % quality_lost} #{quality_failed ? FAILURE : SUCCESS}"
     puts "  Runtime:  #{"%.2f" % ft[:runtime]} #{runtime_failed ? FAILURE : SUCCESS}"
