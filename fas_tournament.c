@@ -452,6 +452,8 @@ population *build_population(fas_optimiser *o, tournament *t,  size_t ps){
   return p;
 }
 
+
+
 void mutate(size_t n, size_t *data){
   size_t i = random_number(n);
   size_t j;
@@ -461,7 +463,22 @@ void mutate(size_t n, size_t *data){
     i = j;
     j = k;
   }
-  reverse(data + i, data + j);  
+
+  switch(random_number(3)){
+    case 0: 
+      reverse(data + i, data + j);  
+      break;
+    case 1: 
+      swap(data + i, data + j);  
+      break;
+    case 2:
+      if(i < j){
+        move_pointer_right(data + i, j - i);
+      } else {
+        move_pointer_left(data + i, i - j);
+      }
+      break;
+  }
 }
 
 void improve_population(tournament *t, population *p, size_t count){
