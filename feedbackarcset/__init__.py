@@ -41,8 +41,53 @@ class Tournament(object):
 
     def optimise(self):
         ordering = np.arange(self.size, dtype=c_size_t)
-        lib.optimal_ordering(self.tournament, ordering.ctypes.data)
+        with Optimiser(self) as optimiser:
+            if self.size < 15:
+                optimiser.table_optimise(ordering)
+            else:
+                optimiser.population_optimise(ordering)
         return Optimisation(self, ordering)
+
+
+class Optimiser(object):
+    def __init__(self, tournament):
+        self.tournament = tournament
+        self.optimiser = lib.new_optimiser(tournament.tournament)
+
+    def close(self):
+        if self.optimiser:
+            lib.del_optimiser(self.optimiser)
+            self.optimiser = None
+
+    def __del__(self):
+        self.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args, **kwargs):
+        self.close()
+
+    def table_optimise(self, items):
+        lib.table_optimise(
+            self.optimiser,
+            self.tournament.tournament,
+            c_size_t(len(items)),
+            items.ctypes.data
+        )
+
+    def population_optimise(self, items, initial_size=500, generations=1000):
+        if len(items) != self.tournament.size:
+            raise ValueError(
+                "population_optimise only optimises the whole set"
+            )
+        lib.population_optimise(
+            self.optimiser,
+            self.tournament.tournament,
+            items.ctypes.data,
+            initial_size,
+            generations
+        )
 
 
 class Optimisation(object):

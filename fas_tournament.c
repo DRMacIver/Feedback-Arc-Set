@@ -39,7 +39,7 @@ typedef struct {
   optimisation_table *opt_table;
 } fas_optimiser;
 
-static fas_optimiser *new_optimiser(tournament *t){
+fas_optimiser *new_optimiser(tournament *t){
   fas_optimiser *it = malloc(sizeof(fas_optimiser));
   it->buffer = malloc(sizeof(size_t) * t->size);
   it->opt_table = optimisation_table_new();
@@ -205,7 +205,7 @@ static inline void swap(size_t *x, size_t *y){
 	*y = z;
 }
 
-static int table_optimise(fas_optimiser *o, tournament *t, size_t n, size_t *items){
+int table_optimise(fas_optimiser *o, tournament *t, size_t n, size_t *items){
 	if(n <= 1) return 0;
 	if(n == 2){
 		int c = tournament_compare(t, items[0], items[1]);
@@ -259,7 +259,7 @@ static int table_optimise(fas_optimiser *o, tournament *t, size_t n, size_t *ite
   }
 }
 
-static int window_optimise(fas_optimiser *o, tournament *t, size_t n, size_t *items, size_t window){
+int window_optimise(fas_optimiser *o, tournament *t, size_t n, size_t *items, size_t window){
   FASDEBUG("Window optimize %lu\n", window);
   if(n <= window){
     return table_optimise(o, t, n, items);
@@ -513,6 +513,18 @@ void improve_population(fas_optimiser *o, tournament *t, population *p, size_t c
   free(data);
 }
 
+void population_optimise(fas_optimiser *o,
+                         tournament *t,
+                         size_t *results,
+                         size_t initial_size,
+                         size_t generations){
+  size_t n = t->size;
+  population *p = build_population(o, t, initial_size);
+  improve_population(o, t, p, generations);
+  memcpy(results, fittest_member(p).data, n * sizeof(size_t));
+  population_del(p);
+}
+
 void comprehensive_smoothing(fas_optimiser *o, tournament *t, size_t n, size_t *results){
   stride_optimise(t, o, n, results, 11); 
   local_sort(t, n, results);
@@ -544,10 +556,7 @@ size_t *optimal_ordering(tournament *t, size_t *results){
     return results;
   }
 
-  population *p = build_population(o, t, 500);
-  improve_population(o, t, p, 1000);
-  memcpy(results, fittest_member(p).data, n * sizeof(size_t));
-  population_del(p);
+  population_optimise(o, t, results, 500, 1000);
 
   comprehensive_smoothing(o, t, n, results);
 
