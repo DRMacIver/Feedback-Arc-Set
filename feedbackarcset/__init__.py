@@ -10,6 +10,10 @@ lib = ctypes.cdll.LoadLibrary(
 lib.tournament_get.restype = c_double
 lib.score_fas_tournament.restype = c_double
 lib.condorcet_boundary_from.restype = c_size_t
+lib.local_sort.restype = c_int
+lib.window_optimise.restype = c_int
+lib.stride_optimise.restype = c_int
+lib.kwik_sort.restype = c_int
 
 
 class Tournament(object):
@@ -52,6 +56,10 @@ class Optimiser(object):
         self.optimiser = lib.new_optimiser(tournament.tournament)
         self.items = items
 
+    def reset(self):
+        if self.optimiser:
+            lib.reset_optimiser(self.optimiser)
+
     def close(self):
         if self.optimiser:
             lib.del_optimiser(self.optimiser)
@@ -79,6 +87,24 @@ class Optimiser(object):
             self.table_optimise()
         else:
             self.population_optimise()
+
+        self.stride_optimise(11)
+        self.local_sort()
+        self.stride_optimise(13)
+        self.local_sort()
+        self.reset()
+
+        for i in xrange(10):
+            changed = 0
+            changed |= self.stride_optimise(12)
+            changed |= self.stride_optimise(7)
+            changed |= self.local_sort()
+            self.reset()
+            if not changed:
+                break
+            self.single_move_optimise()
+
+        self.window_optimise(10)
         self.local_sort()
 
     def table_optimise(self):
@@ -105,6 +131,7 @@ class Optimiser(object):
 
     def kwik_sort(self):
         return self.__optimise(lib.kwik_sort, 0)
+
 
 class Optimisation(object):
     def __init__(self, tournament, ordering):
