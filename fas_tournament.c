@@ -321,7 +321,7 @@ static void move_pointer_left(size_t *x, size_t offset){
   }
 }
 
-int single_move_optimization(fas_optimiser *o, size_t n, size_t *items){
+int single_move_optimise(fas_optimiser *o, size_t n, size_t *items){
   tournament *t = o->tournament;
   FASDEBUG("Single move optimization\n");
   int changed = 1;
@@ -412,9 +412,9 @@ int stride_optimise(fas_optimiser *o, size_t n, size_t *data, size_t stride){
 
 
 
-void kwik_sort(fas_optimiser *o, size_t n, size_t *data, size_t depth){
-  if(n <= 1) return;
-  if(depth >= 10) return;
+int kwik_sort(fas_optimiser *o, size_t n, size_t *data, size_t depth){
+  if(n <= 1) return 0;
+  if(depth >= 10) return 0;
 
   size_t *lt = malloc(n * sizeof(size_t));
   size_t *gt = malloc(n * sizeof(size_t));
@@ -446,6 +446,7 @@ void kwik_sort(fas_optimiser *o, size_t n, size_t *data, size_t depth){
 
   free(lt);
   free(gt);
+  return 1;
 }
 
 size_t *copy_items(size_t n, size_t *items){
@@ -552,7 +553,7 @@ void comprehensive_smoothing(fas_optimiser *o, size_t n, size_t *results){
     changed |= local_sort(o, n, results);
     reset_optimiser(o);
     if(!changed) break;
-    single_move_optimization(o,n,results);
+    single_move_optimise(o,n,results);
   } 
 }
 

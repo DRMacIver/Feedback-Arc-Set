@@ -82,18 +82,29 @@ class Optimiser(object):
         self.local_sort()
 
     def table_optimise(self):
-        self.__optimise(lib.table_optimise)
+        return self.__optimise(lib.table_optimise)
 
     def population_optimise(self, initial_size=50, generations=100):
-        self.__optimise(
+        return self.__optimise(
             lib.population_optimise,
             initial_size,
             generations
         )
 
     def local_sort(self):
-        self.__optimise(lib.local_sort)
+        return self.__optimise(lib.local_sort)
 
+    def window_optimise(self, window=5):
+        return self.__optimise(lib.window_optimise, window)
+
+    def stride_optimise(self, stride=10):
+        return self.__optimise(lib.stride_optimise, stride)
+
+    def single_move_optimise(self):
+        return self.__optimise(lib.single_move_optimise)
+
+    def kwik_sort(self):
+        return self.__optimise(lib.kwik_sort, 0)
 
 class Optimisation(object):
     def __init__(self, tournament, ordering):
