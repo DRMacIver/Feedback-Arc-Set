@@ -64,6 +64,13 @@ inline double tournament_get(tournament *t, size_t i, size_t j){
   return t->entries[n * i + j];
 }
 
+inline void tournament_set(tournament *t, size_t i, size_t j, double x){
+  size_t n = t->size;
+  assert(i < n); 
+  assert(j < n);
+  t->entries[n * i + j] = x;
+}
+
 double score_fas_tournament(tournament *t, size_t count, size_t *data){
 	double score = 0.0;
 
@@ -524,10 +531,12 @@ void comprehensive_smoothing(fas_optimiser *o, tournament *t, size_t n, size_t *
   } 
 }
 
-size_t *optimal_ordering(tournament *t){
+size_t *optimal_ordering(tournament *t, size_t *results){
   fas_optimiser *o = new_optimiser(t);
   size_t n = t->size;
-	size_t *results = integer_range(n);
+  if(results == NULL){
+    results = integer_range(n);
+  }
 
   if(n <= 15){
     table_optimise(o, t, n, results);

@@ -29,7 +29,7 @@ int main(int argc, char **argv){
 	tournament *t = read_tournament(argf);
 
   size_t n = t->size;
-  size_t *items = optimal_ordering(t);
+  size_t *items = optimal_ordering(t, NULL);
 
 	printf("Score: %f\n", score_fas_tournament(t, n, items));
 	printf("Optimal ordering:");
