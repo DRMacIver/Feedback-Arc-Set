@@ -33,6 +33,9 @@ void del_tournament(tournament *t){
   free(t);
 }
 
+void load_data(tournament *t, double *data){
+  memcpy(t->entries, data, t->size * t->size * sizeof(double));
+}
 
 typedef struct {
   size_t *buffer;
@@ -57,6 +60,10 @@ void del_optimiser(fas_optimiser *o){
 void reset_optimiser(fas_optimiser *opt){
   optimisation_table_del(opt->opt_table);
   opt->opt_table = optimisation_table_new();
+}
+
+size_t tournament_size(tournament *t){
+  return t->size;
 }
 
 inline double tournament_get(tournament *t, size_t i, size_t j){

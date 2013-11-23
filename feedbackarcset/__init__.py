@@ -17,13 +17,32 @@ lib.kwik_sort.restype = c_int
 
 
 class Tournament(object):
-    def __init__(self, size, debug=False):
+    @classmethod
+    def load(cls, file):
+        if isinstance(file, str):
+            file = open(file)
+
+        size = int(file.readline().strip())
+        tournament = Tournament(size=size)
+        data = np.zeros(size * size, dtype=c_double)
+        for line in file:
+            i, j, x = line.strip().split()
+            i = int(i)
+            j = int(j)
+            x = float(x)
+            index = i * size + j
+            data[index] = x
+        tournament.load_data(data)
+        return tournament
+
+    def __init__(self, size=None, debug=False):
         if size <= 0:
             raise ValueError("Expected positive size, got %d" % size)
         if debug:
             lib.enable_fas_tournament_debug(c_int(1))
+        tournament = lib.new_tournament(c_int(size))
         self.size = size
-        self.tournament = lib.new_tournament(c_int(size))
+        self.tournament = tournament
 
     def __del__(self):
         lib.del_tournament(self.tournament)
@@ -42,6 +61,16 @@ class Tournament(object):
                 "%d, %d out of bounds [0, %d)" % (i, j, self.size)
             )
         return c_size_t(i), c_size_t(j)
+
+    def load_data(self, data):
+        if data.shape != (self.size ** 2,):
+            raise ValueError(
+                "%r is the wrong shape for tournament of size %d" % (
+                    data.shape, self.size
+                )
+            )
+        data = data.astype(c_double)
+        lib.load_data(self.tournament, data.ctypes.data)
 
     def optimise(self):
         ordering = np.arange(self.size, dtype=c_size_t)
