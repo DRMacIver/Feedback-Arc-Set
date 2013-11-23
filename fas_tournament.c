@@ -37,12 +37,14 @@ void del_tournament(tournament *t){
 typedef struct {
   size_t *buffer;
   optimisation_table *opt_table;
+  tournament *tournament;
 } fas_optimiser;
 
 fas_optimiser *new_optimiser(tournament *t){
   fas_optimiser *it = malloc(sizeof(fas_optimiser));
   it->buffer = malloc(sizeof(size_t) * t->size);
   it->opt_table = optimisation_table_new();
+  it->tournament = t;
   return it;
 }
 
@@ -205,7 +207,8 @@ static inline void swap(size_t *x, size_t *y){
 	*y = z;
 }
 
-int table_optimise(fas_optimiser *o, tournament *t, size_t n, size_t *items){
+int table_optimise(fas_optimiser *o, size_t n, size_t *items){
+  tournament *t = o->tournament;
 	if(n <= 1) return 0;
 	if(n == 2){
 		int c = tournament_compare(t, items[0], items[1]);
@@ -239,7 +242,7 @@ int table_optimise(fas_optimiser *o, tournament *t, size_t n, size_t *items){
     for(size_t i = 0; i < n; i++){
       memcpy(items, pristine_copy, n * sizeof(size_t));
       swap(items, items + i);
-      table_optimise(o, t, n-1, items+1);
+      table_optimise(o, n-1, items+1);
       double new_score = score_fas_tournament(t, n, items);
       if(new_score > best_score_so_far){
         memcpy(best_value_seen, items, n * sizeof(size_t));
@@ -259,20 +262,20 @@ int table_optimise(fas_optimiser *o, tournament *t, size_t n, size_t *items){
   }
 }
 
-int window_optimise(fas_optimiser *o, tournament *t, size_t n, size_t *items, size_t window){
+int window_optimise(fas_optimiser *o, size_t n, size_t *items, size_t window){
   FASDEBUG("Window optimize %lu\n", window);
   if(n <= window){
-    return table_optimise(o, t, n, items);
+    return table_optimise(o, n, items);
   }
-  double last_score = score_fas_tournament(t, n, items);
+  double last_score = score_fas_tournament(o->tournament, n, items);
   int changed_at_all = 0;
   int changed = 1;
   while(changed){
     changed = 0;
     for(size_t i = 0; i < n - window; i++){
-      changed |= table_optimise(o, t, window, items + i); 
+      changed |= table_optimise(o, window, items + i); 
     }
-    double new_score = score_fas_tournament(t, n, items);
+    double new_score = score_fas_tournament(o->tournament, n, items);
 
     double improvement = (new_score - last_score) / last_score;
     
@@ -318,7 +321,8 @@ static void move_pointer_left(size_t *x, size_t offset){
   }
 }
 
-int single_move_optimization(tournament *t, size_t n, size_t *items){
+int single_move_optimization(fas_optimiser *o, size_t n, size_t *items){
+  tournament *t = o->tournament;
   FASDEBUG("Single move optimization\n");
   int changed = 1;
   int changed_at_all = 0;
@@ -377,7 +381,8 @@ void force_connectivity(tournament *t, size_t n, size_t *items){
 }
 
 
-int local_sort(tournament *t, size_t n, size_t *items){
+int local_sort(fas_optimiser *o, size_t n, size_t *items){
+  tournament *t = o->tournament;
   FASDEBUG("local sort\n");
   int changed = 0;
   for(size_t i = 1; i < n; i++){
@@ -393,21 +398,21 @@ int local_sort(tournament *t, size_t n, size_t *items){
   return changed;
 }
 
-int stride_optimise(tournament *t, fas_optimiser *o, size_t n, size_t *data, size_t stride){
+int stride_optimise(fas_optimiser *o, size_t n, size_t *data, size_t stride){
   FASDEBUG("stride optimise: n=%lu, stride=%lu\n", n, stride);
   int changed = 0;
   while(n > stride){
-    changed |= table_optimise(o, t, stride, data);
+    changed |= table_optimise(o, stride, data);
     data += stride;
     n -= stride;
   }
-  changed |= table_optimise(o, t, n, data);
+  changed |= table_optimise(o, n, data);
   return changed;
 }
 
 
 
-void kwik_sort(fas_optimiser *o, tournament *t, size_t n, size_t *data, size_t depth){
+void kwik_sort(fas_optimiser *o, size_t n, size_t *data, size_t depth){
   if(n <= 1) return;
   if(depth >= 10) return;
 
@@ -420,7 +425,7 @@ void kwik_sort(fas_optimiser *o, tournament *t, size_t n, size_t *data, size_t d
   size_t pivot = data[random_number(n)];
  
   for(size_t i = 0; i < n; i++){
-    int c = tournament_compare(t, data[i], pivot);
+    int c = tournament_compare(o->tournament, data[i], pivot);
     if(c < 0) lt[ltn++] = data[i];
     else if(c == 0){
       if(random_number(2)){
@@ -433,8 +438,8 @@ void kwik_sort(fas_optimiser *o, tournament *t, size_t n, size_t *data, size_t d
   }
   
   depth++;
-  kwik_sort(o, t, ltn, lt, depth);
-  kwik_sort(o, t, gtn, gt, depth);
+  kwik_sort(o, ltn, lt, depth);
+  kwik_sort(o, gtn, gt, depth);
 
   memcpy(data, lt, sizeof(size_t) * ltn);
   memcpy(data + ltn, gt, sizeof(size_t) * gtn);
@@ -442,19 +447,27 @@ void kwik_sort(fas_optimiser *o, tournament *t, size_t n, size_t *data, size_t d
   free(lt);
   free(gt);
 }
-population *build_population(fas_optimiser *o, tournament *t,  size_t ps){
-  size_t n = t->size;
+
+size_t *copy_items(size_t n, size_t *items){
+  size_t *copy = calloc(n, sizeof(size_t));
+  memcpy(copy, items, n * sizeof(size_t));
+  return copy;
+}
+
+population *build_population(fas_optimiser *o,
+                             size_t n,
+                             size_t *items,
+                             size_t ps){
   population *p = population_new(ps, n);
 
   for(size_t i = 0; i < ps; i++){
-    size_t *data= integer_range(n);
-    kwik_sort(o, t, n, data, 0), 
+    size_t *data = copy_items(n, items);
+    kwik_sort(o, n, data, 0), 
     p->members[i].data = data;
-    p->members[i].score = score_fas_tournament(t, n, data);
+    p->members[i].score = score_fas_tournament(o->tournament, n, data);
   }
 
   population_heapify(p);
-
   return p;
 }
 
@@ -462,7 +475,7 @@ int coin_flip(){
   return random_number(2);
 }
 
-void mutate(fas_optimiser *o, tournament *t, size_t n, size_t *data){
+void mutate(fas_optimiser *o, size_t n, size_t *data){
   size_t i = random_number(n);
   size_t j;
   do{ j = random_number(n); } while(i == j);
@@ -487,22 +500,23 @@ void mutate(fas_optimiser *o, tournament *t, size_t n, size_t *data){
       break;
     case 3:
       if(j > i + 12) j = i + 12;
-      table_optimise(o, t, j - i, data + i);
+      table_optimise(o, j - i, data + i);
       break;
     case 4:
-      local_sort(t, j - i, data + i);
+      local_sort(o, j - i, data + i);
       break;
   }
 }
 
-void improve_population(fas_optimiser *o, tournament *t, population *p, size_t count){
+void improve_population(fas_optimiser *o, population *p, size_t count){
+  tournament *t = o->tournament;
   size_t n = t->size;
   size_t *data = malloc(n * sizeof(size_t));
 
   for(size_t i = 0; i < count; i++){
     size_t *candidate = p->members[random_number(p->population_count)].data;
     memcpy(data, candidate, n * sizeof(size_t));
-    mutate(o, t, n, data);
+    mutate(o, n, data);
     double score = score_fas_tournament(t, t->size, candidate);
     
     if(!population_contains(p, score, data)){
@@ -514,32 +528,31 @@ void improve_population(fas_optimiser *o, tournament *t, population *p, size_t c
 }
 
 void population_optimise(fas_optimiser *o,
-                         tournament *t,
-                         size_t *results,
+                         size_t n,
+                         size_t *items,
                          size_t initial_size,
                          size_t generations){
-  size_t n = t->size;
-  population *p = build_population(o, t, initial_size);
-  improve_population(o, t, p, generations);
-  memcpy(results, fittest_member(p).data, n * sizeof(size_t));
+  population *p = build_population(o, n, items, initial_size);
+  improve_population(o, p, generations);
+  memcpy(items, fittest_member(p).data, n * sizeof(size_t));
   population_del(p);
 }
 
-void comprehensive_smoothing(fas_optimiser *o, tournament *t, size_t n, size_t *results){
-  stride_optimise(t, o, n, results, 11); 
-  local_sort(t, n, results);
-  stride_optimise(t, o, n, results, 13); 
-  local_sort(t, n, results);
+void comprehensive_smoothing(fas_optimiser *o, size_t n, size_t *results){
+  stride_optimise(o, n, results, 11); 
+  local_sort(o, n, results);
+  stride_optimise(o, n, results, 13); 
+  local_sort(o, n, results);
   reset_optimiser(o);
    
   for(int i = 0; i < 10; i++){
     int changed = 0;
-    changed |= stride_optimise(t,o, n, results, 12);
-    changed |= stride_optimise(t,o, n, results, 7);
-    changed |= local_sort(t, n, results);
+    changed |= stride_optimise(o, n, results, 12);
+    changed |= stride_optimise(o, n, results, 7);
+    changed |= local_sort(o, n, results);
     reset_optimiser(o);
     if(!changed) break;
-    single_move_optimization(t,n,results);
+    single_move_optimization(o,n,results);
   } 
 }
 
@@ -551,17 +564,15 @@ size_t *optimal_ordering(tournament *t, size_t *results){
   }
 
   if(n <= 15){
-    table_optimise(o, t, n, results);
+    table_optimise(o, n, results);
     del_optimiser(o);
     return results;
   }
 
-  population_optimise(o, t, results, 500, 1000);
-
-  comprehensive_smoothing(o, t, n, results);
-
-  window_optimise(o, t, n, results, 10);
-  local_sort(t, n, results);
+  population_optimise(o, n, results, 500, 1000);
+  comprehensive_smoothing(o, n, results);
+  window_optimise(o, n, results, 10);
+  local_sort(o, n, results);
 
   del_optimiser(o);
   return results;
