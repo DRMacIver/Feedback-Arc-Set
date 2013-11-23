@@ -41,18 +41,16 @@ class Tournament(object):
 
     def optimise(self):
         ordering = np.arange(self.size, dtype=c_size_t)
-        with Optimiser(self) as optimiser:
-            if self.size < 15:
-                optimiser.table_optimise(ordering)
-            else:
-                optimiser.population_optimise(ordering)
+        with Optimiser(self, ordering) as optimiser:
+            optimiser.pretty_good_optimisation()
         return Optimisation(self, ordering)
 
 
 class Optimiser(object):
-    def __init__(self, tournament):
+    def __init__(self, tournament, items):
         self.tournament = tournament
         self.optimiser = lib.new_optimiser(tournament.tournament)
+        self.items = items
 
     def close(self):
         if self.optimiser:
@@ -68,26 +66,33 @@ class Optimiser(object):
     def __exit__(self, *args, **kwargs):
         self.close()
 
-    def table_optimise(self, items):
-        lib.table_optimise(
+    def __optimise(self, optimise, *args):
+        return optimise(
             self.optimiser,
-            self.tournament.tournament,
-            c_size_t(len(items)),
-            items.ctypes.data
+            c_size_t(len(self.items)),
+            self.items.ctypes.data,
+            *args
         )
 
-    def population_optimise(self, items, initial_size=500, generations=1000):
-        if len(items) != self.tournament.size:
-            raise ValueError(
-                "population_optimise only optimises the whole set"
-            )
-        lib.population_optimise(
-            self.optimiser,
-            self.tournament.tournament,
-            items.ctypes.data,
+    def pretty_good_optimisation(self):
+        if len(self.items) < 15:
+            self.table_optimise()
+        else:
+            self.population_optimise()
+        self.local_sort()
+
+    def table_optimise(self):
+        self.__optimise(lib.table_optimise)
+
+    def population_optimise(self, initial_size=50, generations=100):
+        self.__optimise(
+            lib.population_optimise,
             initial_size,
             generations
         )
+
+    def local_sort(self):
+        self.__optimise(lib.local_sort)
 
 
 class Optimisation(object):
@@ -98,7 +103,7 @@ class Optimisation(object):
         self.__condorcet_sets = None
 
     def __repr__(self):
-        return "Optimisation([%r], score=%f)" % (
+        return "Optimisation(%r, score=%f)" % (
             self.condorcet_sets,
             self.score
         )
