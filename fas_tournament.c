@@ -18,7 +18,6 @@ int _enable_fas_tournament_debug = 0;
 
 void enable_fas_tournament_debug(int x){
   _enable_fas_tournament_debug = x;
-  FASDEBUG("Debugging on\n");
 }
 
 tournament *new_tournament(int n){
@@ -266,7 +265,6 @@ int table_optimise(fas_optimiser *o, size_t n, size_t *items){
 }
 
 int window_optimise(fas_optimiser *o, size_t n, size_t *items, size_t window){
-  FASDEBUG("Window optimize %lu\n", window);
   if(n <= window){
     return table_optimise(o, n, items);
   }
@@ -326,7 +324,6 @@ static void move_pointer_left(size_t *x, size_t offset){
 
 int single_move_optimise(fas_optimiser *o, size_t n, size_t *items){
   tournament *t = o->tournament;
-  FASDEBUG("Single move optimization\n");
   int changed = 1;
   int changed_at_all = 0;
   while(changed){
@@ -373,20 +370,24 @@ size_t *integer_range(size_t n){
   return results;
 }
 
-void force_connectivity(tournament *t, size_t n, size_t *items){
-  FASDEBUG("force connectivity\n");
-  if(!n) return;
+int force_connectivity(fas_optimiser *o, size_t n, size_t *items){
+  if(!n) return 0;
+  int changed = 0;
+  tournament *t = o->tournament;
   for(size_t i = 0; i < n - 1; i++){
     size_t j = i + 1;
     while(j < n && !tournament_compare(t, items[i], items[j])) j++;
-    if(j < n) move_pointer_left(items + j, (j - i - 1));
+    if(j < n){
+      changed = 1;
+      move_pointer_left(items + j, (j - i - 1));
+    }
   }
+  return changed;
 }
 
 
 int local_sort(fas_optimiser *o, size_t n, size_t *items){
   tournament *t = o->tournament;
-  FASDEBUG("local sort\n");
   int changed = 0;
   for(size_t i = 1; i < n; i++){
     size_t j = i;
@@ -402,7 +403,6 @@ int local_sort(fas_optimiser *o, size_t n, size_t *items){
 }
 
 int stride_optimise(fas_optimiser *o, size_t n, size_t *data, size_t stride){
-  FASDEBUG("stride optimise: n=%lu, stride=%lu\n", n, stride);
   int changed = 0;
   while(n > stride){
     changed |= table_optimise(o, stride, data);

@@ -116,6 +116,7 @@ class Optimiser(object):
         else:
             self.population_optimise()
 
+        self.force_connectivity()
         self.stride_optimise(11)
         self.local_sort()
         self.stride_optimise(13)
@@ -134,6 +135,9 @@ class Optimiser(object):
 
         self.window_optimise(10)
         self.local_sort()
+
+    def force_connectivity(self):
+        return self.__optimise(lib.force_connectivity)
 
     def table_optimise(self):
         return self.__optimise(lib.table_optimise)
