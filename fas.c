@@ -26,13 +26,13 @@ int main(int argc, char **argv){
     argf = stdin;
   }
 
-	tournament *t = read_tournament(argf);
+  tournament *t = read_tournament(argf);
 
   size_t n = t->size;
   size_t *items = optimal_ordering(t, NULL);
 
-	printf("Score: %f\n", score_fas_tournament(t, n, items));
-	printf("Optimal ordering:");
+  printf("Score: %f\n", score_fas_tournament(t, n, items));
+  printf("Optimal ordering:");
 
   size_t i = 0;
   size_t next_boundary = condorcet_boundary_from(t, n, items, i);
@@ -58,11 +58,11 @@ int main(int argc, char **argv){
       printf(" ||");
       next_boundary = condorcet_boundary_from(t, n, items, i);
     }
-	}
+  }
   printf("\n");
 
   free(items);
-	del_tournament(t);
+  del_tournament(t);
 
-	return 0;
+  return 0;
 }
