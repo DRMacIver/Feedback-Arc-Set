@@ -29,15 +29,14 @@ class Tournament(object):
 
         size = int(file.readline().strip())
         tournament = Tournament(size=size)
-        data = np.zeros(size * size, dtype=c_double)
+        n = 0
         for line in file:
+            n += 1
             i, j, x = line.strip().split()
             i = int(i)
             j = int(j)
             x = float(x)
-            index = i * size + j
-            data[index] = x
-        tournament.load_data(data)
+            tournament[i, j] = x
         return tournament
 
     def __init__(self, size=None, debug=False):
