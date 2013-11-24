@@ -12,8 +12,12 @@ clean:
 %.o: %.c
 	gcc -c $(C_FLAGS) $< -o $@
 
-test: fas.so
-	python tests.py
+venv:
+	virtualenv venv
+	venv/bin/pip install colorama
+
+test: fas.so venv
+	venv/bin/python tests.py
 
 fas: $(OBJ)
 	gcc -g -o fas permutations.o fas_tournament.o fas.o optimisation_table.o population.o -lm -O3
