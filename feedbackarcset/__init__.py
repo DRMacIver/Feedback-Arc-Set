@@ -71,16 +71,6 @@ class Tournament(object):
             )
         return c_size_t(i), c_size_t(j)
 
-    def load_data(self, data):
-        if data.shape != (self.size ** 2,):
-            raise ValueError(
-                "%r is the wrong shape for tournament of size %d" % (
-                    data.shape, self.size
-                )
-            )
-        data = data.astype(c_double)
-        lib.load_data(self.tournament, data.ctypes.data)
-
     def optimise(self):
         ordering = np.arange(self.size, dtype=c_size_t)
         with Optimiser(self, ordering) as optimiser:

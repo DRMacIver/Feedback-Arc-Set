@@ -33,10 +33,6 @@ void del_tournament(tournament *t){
   free(t);
 }
 
-void load_data(tournament *t, double *data){
-  memcpy(t->entries, data, t->size * t->size * sizeof(double));
-}
-
 typedef struct {
   size_t *buffer;
   optimisation_table *opt_table;
