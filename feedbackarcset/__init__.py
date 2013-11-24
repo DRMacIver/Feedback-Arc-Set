@@ -49,7 +49,12 @@ class Tournament(object):
         self.tournament = tournament
 
     def __del__(self):
-        lib.del_tournament(self.tournament)
+        try:
+            if self.tournament:
+                lib.del_tournament(self.tournament)
+                self.tournament = None
+        except AttributeError:
+            pass
 
     def __getitem__(self, (i, j)):
         i, j = self.__convertindices(i, j)
