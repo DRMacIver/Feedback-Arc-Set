@@ -12,8 +12,8 @@ clean:
 %.o: %.c
 	gcc -c $(C_FLAGS) $< -o $@
 
-test: fas
-	ruby tests.rb
+test: fas.so
+	python tests.py
 
 fas: $(OBJ)
 	gcc -g -o fas permutations.o fas_tournament.o fas.o optimisation_table.o population.o -lm -O3
