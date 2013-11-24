@@ -1,5 +1,5 @@
 import ctypes
-from ctypes import c_int, c_size_t, c_double
+from ctypes import c_int, c_size_t, c_double, POINTER
 import os.path as p
 import numpy as np
 
@@ -7,6 +7,11 @@ lib = ctypes.cdll.LoadLibrary(
     p.abspath(p.join(p.dirname(__file__), "..", "fas.so"))
 )
 
+
+class Tournament(ctypes.Structure):
+    pass
+
+lib.new_tournament.restype = POINTER(Tournament)
 lib.tournament_get.restype = c_double
 lib.score_fas_tournament.restype = c_double
 lib.condorcet_boundary_from.restype = c_size_t
@@ -107,7 +112,7 @@ class Optimiser(object):
         return optimise(
             self.optimiser,
             c_size_t(len(self.items)),
-            self.items.ctypes.data,
+            self.items.ctypes.data_as(POINTER(c_double)),
             *args
         )
 
@@ -185,7 +190,7 @@ class Optimisation(object):
                 end = lib.condorcet_boundary_from(
                     self.tournament.tournament,
                     len(self.ordering),
-                    self.ordering.ctypes.data,
+                    self.ordering.ctypes.data_as(POINTER(c_double)),
                     c_size_t(start)
                 ) + 1
                 sets.append(tuple(self.ordering[start:end]))
@@ -199,6 +204,6 @@ class Optimisation(object):
             self.__score = lib.score_fas_tournament(
                 self.tournament.tournament,
                 c_size_t(len(self.ordering)),
-                self.ordering.ctypes.data,
+                self.ordering.ctypes.data_as(POINTER(c_double)),
             )
         return self.__score
