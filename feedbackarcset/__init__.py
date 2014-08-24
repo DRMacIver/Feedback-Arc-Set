@@ -2,6 +2,8 @@ import ctypes
 from ctypes import c_int, c_size_t, c_double, POINTER
 import os.path as p
 import numpy as np
+import random
+import math
 
 lib = ctypes.cdll.LoadLibrary(
     p.abspath(p.join(p.dirname(__file__), "..", "fas.so"))
@@ -12,6 +14,7 @@ class Tournament(ctypes.Structure):
     pass
 
 lib.new_tournament.restype = POINTER(Tournament)
+lib.normalize_tournament.restype = POINTER(Tournament)
 lib.tournament_get.restype = c_double
 lib.score_fas_tournament.restype = c_double
 lib.condorcet_boundary_from.restype = c_size_t
@@ -39,12 +42,19 @@ class Tournament(object):
             tournament[i, j] = x
         return tournament
 
-    def __init__(self, size=None, debug=False):
+    def normalize(self):
+        return Tournament(
+            size=self.size,
+            tournament=lib.normalize_tournament(self.tournament)
+        )
+
+    def __init__(self, size=None, debug=False, tournament=None):
         if size <= 0:
             raise ValueError("Expected positive size, got %d" % size)
         if debug:
             lib.enable_fas_tournament_debug(c_int(1))
-        tournament = lib.new_tournament(c_int(size))
+        if tournament is None:
+            tournament = lib.new_tournament(c_size_t(size))
         self.size = size
         self.tournament = tournament
 
@@ -57,6 +67,7 @@ class Tournament(object):
             pass
 
     def __getitem__(self, (i, j)):
+        assert self.tournament is not None
         i, j = self.__convertindices(i, j)
         return lib.tournament_get(self.tournament, i, j)
 
@@ -83,6 +94,13 @@ class Optimiser(object):
         self.tournament = tournament
         self.optimiser = lib.new_optimiser(tournament.tournament)
         self.items = items
+        self.__normalized_tournament = None
+
+    @property
+    def normalized_tournament(self):
+        if self.__normalized_tournament is None:
+            self.__normalized_tournament = self.tournament.normalize()
+        return self.__normalized_tournament
 
     def reset(self):
         if self.optimiser:
@@ -110,11 +128,91 @@ class Optimiser(object):
             *args
         )
 
+    def condorcet_sample_optimise(self, epsilon, delta):
+        """
+        Method inspired by
+            Crowdsourcing for Participatory Democracies:
+            Efficient Elicitation of Social Choice Functions
+            David T. Lee, Ashish Goel, Tanja Aitamurto, Helene Landemore
+
+        If this tournament comes from a set of votes and has an epsilon
+        condorcet winner this will find a 3-epsilon condorcet winner with
+        probability at least 1 - delta.
+
+        There's no compelling argument that this should produce great results
+        for a tournament, but it seemed worth a try.
+        """
+        size = self.tournament.size
+        n_rounds = int(math.ceil(
+            float(size) / (epsilon ** 2) * math.log(float(size) / delta)
+        ))
+        round_size = int(math.ceil(
+            math.log(n_rounds / delta) / (epsilon ** 2)
+        ))
+        # Force an odd number so we get clear majorities. This doesn't
+        # matter much but is helpful for tie breakers.
+        if round_size % 2 == 0:
+            round_size += 1
+
+        # Getting more than this many votes in a head to head counts as
+        # a win. Note: Everyone can be a winner.
+        threshold = 0.5 * (1 - 2 * epsilon) * round_size
+
+        nt = self.normalized_tournament
+        scores = np.zeros(shape=self.tournament.size, dtype=int)
+        for _ in xrange(n_rounds):
+            i = random.randint(0, size-1)
+            j = random.randint(0, size-1)
+            # We sample round_size members of the population and see which
+            # candidate beats each in a head to head
+            p = nt[i, j]
+            sample = np.random.binomial(round_size, p)
+            if sample >= threshold:
+                scores[i] += 1
+            if (round_size - sample) >= threshold:
+                scores[j] += 1
+        best_order = np.argsort(scores)
+        self.items[:] = best_order[::-1]
+
+    def borda_sample_optimise(self, epsilon, delta):
+        """
+        Method inspired by
+            Crowdsourcing for Participatory Democracies:
+            Efficient Elicitation of Social Choice Functions
+            David T. Lee, Ashish Goel, Tanja Aitamurto, Helene Landemore
+
+        Essentially we imagine this has come from a population of voters
+        and run a simulation which with high probability produces something
+        that ranks close to the borda score.
+
+        Produces an epsilon-borda ranking with probability at least 1 - delta
+        """
+        size = self.tournament.size
+        n_rounds = int(math.ceil(
+            float(size) / (epsilon ** 2) * math.log(float(size) / delta)
+        ))
+
+        nt = self.normalized_tournament
+        scores = np.zeros(shape=self.tournament.size, dtype=int)
+        for _ in xrange(n_rounds):
+            i = random.randint(0, size-1)
+            j = random.randint(0, size-1)
+            if i == j:
+                scores[i] += 1
+            else:
+                p = nt[i, j]
+                if random.random() <= p:
+                    scores[i] += 1
+                else:
+                    scores[j] += 1
+        best_order = np.argsort(scores)
+        self.items[:] = best_order[::-1]
+
     def pretty_good_optimisation(self):
         if len(self.items) < 15:
             self.table_optimise()
         else:
-            self.population_optimise()
+            self.condorcet_sample_optimise(0.05, 0.001)
 
         self.force_connectivity()
         self.stride_optimise(11)

@@ -20,12 +20,49 @@ void enable_fas_tournament_debug(int x){
   _enable_fas_tournament_debug = x;
 }
 
-tournament *new_tournament(int n){
+tournament *new_tournament(size_t n){
   size_t size = sizeof(tournament) + sizeof(double) * n * n;
   tournament *t = malloc(size);
   memset(t, '\0', size);
   t->size = n;
   return t;
+}
+
+tournament *normalize_tournament(tournament *t){
+    double max_total = 0.0;
+    for(size_t i = 0; i < t->size; i++){
+        for(size_t j = i + 1; j < t->size; j++){
+            double total = tournament_get(t, i, j) + tournament_get(t, j, i);
+            if(total > max_total) {
+                max_total = total;
+            }
+        }
+    }
+    tournament *nt = new_tournament(t->size);
+    if(max_total <= 0.0){
+        for(size_t i = 0; i < t->size; i++){
+            for(size_t j = 0; j < t->size; j++){
+                tournament_set(nt, i, j, 0.5);
+            }
+        }
+    } else {
+        for(size_t i = 0; i < t->size; i++){
+            tournament_set(nt, i, i, 0.5);
+            for(size_t j = i + 1; j < t->size; j++){
+                double tij = tournament_get(t, i, j);
+                double tji = tournament_get(t, j, i);
+                double bonus = (max_total - (tij + tji)) / 2;
+                tij += bonus;
+                tji += bonus;
+                tij /= max_total;
+                tji /= max_total;
+                tournament_set(nt, i, j, tij);
+                tournament_set(nt, j, i, tji);
+            }
+        }
+    }
+
+    return nt;
 }
 
 void del_tournament(tournament *t){
